@@ -1,0 +1,7 @@
+@layer base {
+    .array-container {
+        display: grid;
+        position: relative;
+        gap: inherit;
+    }
+}

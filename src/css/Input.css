@@ -1,0 +1,172 @@
+* {
+    box-sizing: border-box;
+}
+
+@layer base {
+
+    /* =========================
+    CONTAINER BASE
+========================= */
+    .input-container {
+        --line-bg: white;
+        --field-border-width: 2px;
+        --field-border-color: black;
+        /* --field-border-color: #94a3b8; */
+        --field-border-focus-color: #2563eb;
+        --field-font-size: 15px;
+        --field-font-weight: 400;
+
+        --float: 0;
+
+        --field-height: 42px;
+        --field-padding-x: 16px;
+        --field-padding-y: 10px;
+
+        --field-radius: 8px;
+
+        --placeholder-color: #64748b;
+        --placeholder-focus-color: #2563eb;
+
+        /* --placeholder-font-size: 1rem; */
+        --placeholder-font-weight: 400;
+
+        --field-background: transparent;
+
+        --select-option-hover-bg: #e5e7eb;
+        --select-option-selected-bg: #dbeafe;
+        --select-option-hover-color: inherit;
+        --select-option-selected-color: inherit;
+        --select-option-offset-y: 5px;
+
+        gap: 10px;
+        display: grid;
+    }
+
+    /* =========================
+   BORDER (wrapper based)
+========================= */
+    .field-root {
+        position: relative;
+        width: 100%;
+        /* border : 2px solid black; */
+    }
+
+    /* Hide the browser's native placeholder completely */
+    /* .field-root .template-input input::placeholder {
+        color: transparent !important;
+        opacity: 0 !important;
+    } */
+
+    /* Bind your custom elements to look for the inherited CSS variables */
+    .field-root .template-input .placeholder-input {
+        /* If '--placeholder-color' is provided by a parent style, use it. 
+       Otherwise, fall back safely to the parent's current text color. */
+        color: var(--placeholder-color);
+
+        /* Dynamically inherit font configurations if provided */
+        font-weight: var(--placeholder-font-weight);
+    }
+
+    .template-input {
+        position: relative;
+        width: 100%;
+        /* border: 2px solid red; */
+    }
+
+    .field-input {
+        border: var(--field-border-width) solid black;
+        outline-style: none;
+        color: inherit;
+        width: 100%;
+        padding-block: var(--field-padding-y);
+        font-size: var(--field-font-size);
+        font-weight: var(--field-font-weight);
+        border-radius: var(--field-radius);
+        padding-inline: var(--field-padding-x);
+        background-color: transparent;
+        transition: border-color 200ms ease;
+    }
+
+    /* .field-input {
+        display: block;
+
+        width: 100%;
+        height: var(--field-height);
+
+        padding-inline: var(--field-padding-x);
+
+        border:
+            var(--field-border-width) solid var(--field-border-color);
+
+        border-radius: var(--field-radius);
+
+        outline: none;
+
+        background: var(--field-background);
+
+        color: inherit;
+
+        transition:
+            border-color 200ms ease,
+            box-shadow 200ms ease;
+    } */
+
+    /* =========================
+   LABEL BASE
+========================= */
+    .label-input {
+        position: absolute;
+        /* padding-inline: var(--po); */
+        height: 100%;
+        left: var(--field-padding-x);
+        top: 0%;
+        /* transform: translateY(-50%); */
+        display: inline-flex;
+        align-items: center;
+        pointer-events: none;
+        transition: top 200ms ease, transform 200ms ease;
+    }
+
+    /* =========================
+   PLACEHOLDER TEXT
+========================= */
+    .placeholder-input {
+        transform-origin: left center;
+        transform: scale(calc(1 - 0.25 * var(--float))) translateY(calc(-66% * var(--float))) translateX(calc(10% * var(--float)));
+        display: flex;
+        height: 100%;
+        /* border: 2px solid red; */
+        align-items: center;
+        transition: transform 200ms ease;
+        background: transparent;
+    }
+
+    /* =========================
+   BORDER CUT LINE
+========================= */
+    .line-input {
+        position: absolute;
+        width: 100%;
+        left: -2px;
+        background-color: var(--line-bg);
+        height: var(--field-border-width);
+        top: 0;
+        opacity: calc(var(--float));
+        ;
+        transition: opacity 200ms ease;
+    }
+
+    /* =========================
+   FLOAT STATES
+========================= */
+
+    input:focus+.label-input .placeholder-input,
+    input:not(:placeholder-shown)+.label-input .placeholder-input {
+        transform: scale(0.75) translateY(-66%) translateX(10%);
+    }
+
+    input:focus+.label-input .line-input,
+    input:not(:placeholder-shown)+.label-input .line-input {
+        opacity: 1;
+    }
+}

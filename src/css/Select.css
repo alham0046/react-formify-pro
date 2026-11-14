@@ -1,0 +1,210 @@
+.select-container {
+    anchor-name: var(--anchor-name);
+    outline: none;
+}
+
+.select-options-container>div {
+    min-height: 0;
+    max-height: 188px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 auto;
+}
+
+.select-options-container {
+    position: fixed;
+    position-anchor: var(--anchor-name);
+    width: anchor-size(width);
+    top: anchor(bottom);
+    left: anchor(left);
+    position-try-fallbacks: flip-block;
+}
+
+@layer base {
+    /* .field-select-root {} */
+
+    .field-select-root {
+        /* anchor-name: var(--anchor-name); */
+        outline: none;
+        /* width: 100%; */
+        /* border: 2px solid red; */
+        /* display: block; */
+        cursor: pointer;
+    }
+
+    .select-options-container {
+        /* Position the dropdown box */
+        /* position: fixed;
+        position-anchor: var(--anchor-name); */
+        background-color: white;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        /* Tie it to the box */
+
+        /* Default size */
+        /* width: anchor-size(width); */
+        border: var(--field-border-width) solid black;
+        border-radius: var(--field-radius);
+
+        /* Important */
+        /* max-height: 250px; */
+
+        /* Prevent the outer container itself from scrolling */
+        overflow: hidden;
+
+        /* Default position: Below the box */
+        /* top: anchor(bottom);
+        left: anchor(left); */
+
+        /* Default offset */
+        margin-block-start: var(--select-option-offset-y);
+
+        /* THE MAGIC HACK: If it hits the bottom edge, try flipping to the top */
+        /* position-try-fallbacks: flip-block; */
+        box-sizing: border-box;
+        overflow: hidden;
+        box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    .select-option {
+        padding-block: var(--field-padding-y);
+        padding-inline: var(--field-padding-x);
+        font-size: var(--field-font-size);
+        font-weight: var(--field-font-weight);
+        background-color: transparent;
+        /* transition: background-color 200ms ease; */
+        cursor: pointer;
+    }
+
+    .select-option[data-active="true"] {
+        background-color: oklch(88.2% 0.059 254.128);
+        outline: none;
+    }
+
+    .select-option[aria-selected="true"] {
+        background-color: #f3f4f6;
+        color: #155dfc;
+        /* color: white; */
+    }
+
+    .select-option[aria-selected="true"][data-active="true"] {
+        background-color: rgb(140, 140, 197);
+        color: white;
+    }
+
+    .select-search {
+        /* width: 100%; */
+        /* width: calc(100% - 20px); */
+        flex: 0 0 auto;
+        padding-block: 8px;
+        padding-inline: 10px;
+        border-radius: 4px;
+        background-color: #f3f4f6;
+        color: black;
+        border: var(--field-border-width) solid black;
+        margin-inline: 5px;
+        margin-block: 5px;
+    }
+
+    /* .field-input {
+        border: var(--field-border-width) solid black;
+        outline-style: none;
+        color: inherit;
+        width: 100%;
+        padding-block: var(--field-padding-y);
+        font-size: var(--field-font-size);
+        font-weight: var(--field-font-weight);
+        border-radius: var(--field-radius);
+        padding-inline: var(--field-padding-x);
+        background-color: transparent;
+        transition: border-color 200ms ease;
+    } */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* @layer base {
+    .select-input {
+        appearance: base-select;
+        cursor: pointer;
+        width: 100%;
+        padding-block: var(--field-padding-y);
+        font-size: var(--field-font-size);
+        font-weight: var(--field-font-weight);
+        padding-inline: var(--field-padding-x);
+        border: var(--field-border-width) solid black;
+        border-radius: var(--field-radius);
+        background-color: transparent;
+    }
+
+    ::picker(select) {
+        appearance: base-select;
+        border: var(--field-border-width) solid rgb(173, 163, 163);
+        margin-block: 10px;
+        border-radius: var(--field-radius);
+    }
+
+    .select-input:hover {
+        background-color: inherit;
+    }
+
+    .select-option {
+        display: flex;
+        position: relative;
+        align-items: center;
+        font-size: var(--field-font-size);
+        font-weight: var(--field-font-weight);
+        padding-block: var(--field-padding-y);
+        padding-inline: var(--field-padding-x);
+    }
+
+    .select-option:hover, .select-option:focus-within {
+        background-color: var(--select-option-hover-bg, #e5e7eb);
+        outline: none;
+    }
+
+
+    .select-option:checked {
+        background-color: var(--select-option-selected-bg, #dbeafe);
+    }
+
+    .select-option::checkmark {
+        position: absolute;
+        content: "✅";
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .select-input::picker-icon {
+        transition: .3s;
+    }
+
+    .select-input:open::picker-icon {
+        rotate: 180deg;
+    }
+
+} */

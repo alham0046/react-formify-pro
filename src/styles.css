@@ -1,0 +1,33 @@
+@import './css/Input.css';
+@import './css/RunningText.css';
+@import './css/Array.css';
+@import './css/Select.css';
+
+/* For Chrome, Safari, Edge, Opera remove the arrow for numbers input */
+.input-container input::-webkit-outer-spin-button,
+.input-container input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+.input-container input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.input-edited {
+  color: #2563eb;
+}
+
+.input-error {
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.input-warning {
+  border-color: #f59e0b;
+}
+
+.input-success {
+  border-color: #16a34a;
+}
