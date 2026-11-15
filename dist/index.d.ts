@@ -65,7 +65,9 @@ interface BaseInputProps {
 interface OnInputChangeArgs {
     value: string | number;
     setFields: (field: FieldProps) => void;
-    arrayAction: (path: string) => ArrayController | undefined;
+    arrayAction: (path?: string) => (ArrayController & {
+        currentIndex?: number;
+    }) | undefined;
     reset: (keys?: string[] | string) => void;
 }
 type OnInputChange = (args: OnInputChangeArgs) => void;

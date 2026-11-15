@@ -39,7 +39,7 @@ export interface OnInputChangeArgs {
   value: string | number
   setFields: (field: FieldProps) => void
   // arrAction?: (path: string) => ArrayHelpers
-  arrayAction: (path: string) => ArrayController | undefined
+  arrayAction: (path?: string) => (ArrayController & { currentIndex?: number }) | undefined
   reset: (keys?: string[] | string) => void
   // setOptions?: (name : string, options: string[] | DropdownOption[], initialValue?: string) => void
 }
