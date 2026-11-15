@@ -60,7 +60,12 @@ const SelectInput= forwardRef<DropdownRefType, SelectProps>((props, ref) => {
         disabled && inputStore.registerDisabled(fieldInstance, disabled)
         fieldInstance.subscribe(() => {
             // const setFields = inputStore.setFields
-            onChange?.({value : fieldInstance.value, setFields : fieldInstance.setFields, arrayAction : fieldInstance.getArray})
+            onChange?.({
+                value : fieldInstance.value,
+                setFields : (fields: Record<string, any>) => fieldInstance.setFields(fields),
+                arrayAction : (path: string) => fieldInstance.getArray(path),
+                reset: (target?: string | string[]) => fieldInstance.reset(target)
+            })
         })
 
         fieldInstance.subscribeToggle(() => {
@@ -107,7 +112,7 @@ const SelectInput= forwardRef<DropdownRefType, SelectProps>((props, ref) => {
 
     const hiddenValue: boolean = useIsHidden(field.current!)
 
-    console.log('the selectinput rerendering', hiddenValue)
+    // console.log('the selectinput rerendering', hiddenValue)
     
     if (hiddenValue) {
         return null;

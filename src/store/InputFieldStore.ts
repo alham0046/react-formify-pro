@@ -2,7 +2,7 @@ import type { ArrayController } from "../typeDeclaration/arrayProps"
 import type { NodeWithFields } from "../typeDeclaration/nodeProps"
 import { resolveTargetNode } from "../Utils/NodeResolver"
 import { getNodePath } from "../Utils/PathUtils"
-import { ArrayField, type ArrayItemType } from "./ArrayStore"
+import { ArrayField, ArrayItem, type ArrayItemType } from "./ArrayStore"
 import { FormNode } from "./FormNode"
 import type { FormObjectType } from "./FormObject"
 import type { InputFormType } from "./InputFormStore"
@@ -190,10 +190,40 @@ export class InputField extends FormNode {
             : this.name
     }
 
-    getArray = (path: string): ArrayController | undefined => {
-        const node = resolveTargetNode(this, path);
-        return node instanceof ArrayField ? node.controller : undefined;
-    };
+    // getArray = (path?: string): (ArrayController & { currentIndex: number | undefined }) | undefined => {
+    //     const parent = this.parent
+    //     const currentIndex = parent instanceof ArrayItem ? parent.index : undefined
+    //     if (!path) return parent instanceof ArrayItem ? {...parent.array.controller, currentIndex} : undefined
+    //     const node = resolveTargetNode(this, path);
+    //     return node instanceof ArrayField ? {...node.controller, currentIndex} : undefined;
+    // };
+
+    public getArray(path?: string): (ArrayController & { currentIndex?: number }) | undefined {
+        // 1. Walk up to find the nearest enclosing ArrayItem (handles nested ObjectContainer inside ArrayItem)
+        let curr: any = this.parent
+        let enclosingItem: ArrayItem | undefined
+        while (curr) {
+            if (curr instanceof ArrayItem) {
+                enclosingItem = curr
+                break
+            }
+            curr = curr.parent
+        }
+
+        const currentIndex = enclosingItem?.index
+
+        // 2. If no path is provided, target the enclosing array directly
+        const targetArray = !path
+            ? enclosingItem?.array
+            : resolveTargetNode(this as any, path)
+
+        if (!(targetArray instanceof ArrayField)) return undefined
+
+        // 3. Inherit live getters (like `length`) from controller without cloning methods
+        const scopedController = Object.create(targetArray.controller)
+        scopedController.currentIndex = currentIndex
+        return scopedController
+    }
 
     public setFields = (fields: Record<string, any>): void => {
         // Reuses the inherited prototype setValue method directly
@@ -206,15 +236,15 @@ export class InputField extends FormNode {
             this.value = this._initialValue
         } else {
             this.resetByKey(key)
-        // if (Array.isArray(key)) {
-        //     key.forEach(k => {
-        //         const node = resolveTargetNode(this, k)
-        //         if (node) node.reset()
-        //     })
-        // } else {
-        //     const node = resolveTargetNode(this, key)
-        //     if (node) node.reset()
-        // }
+            // if (Array.isArray(key)) {
+            //     key.forEach(k => {
+            //         const node = resolveTargetNode(this, k)
+            //         if (node) node.reset()
+            //     })
+            // } else {
+            //     const node = resolveTargetNode(this, key)
+            //     if (node) node.reset()
+            // }
         }
     }
 

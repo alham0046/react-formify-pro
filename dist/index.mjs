@@ -27,7 +27,7 @@ styleInject('@import "./css/Input.css";\n@import "./css/RunningText.css";\n@impo
 styleInject('.rt-container {\n  position: relative;\n  overflow: hidden;\n  white-space: nowrap;\n}\n.rt-track {\n  display: inline-flex;\n  gap: 3rem;\n  width: max-content;\n  transform: translateX(0);\n  transition: transform 0.6s ease-out;\n}\n.rt-duplicate {\n  display: none;\n}\n.rt-overflow .rt-track .rt-duplicate {\n  display: block;\n}\n.rt-overflow:not(:hover)::after {\n  content: "...";\n  position: absolute;\n  right: 0;\n  top: 0;\n  height: 100%;\n  padding-left: 1rem;\n  background:\n    linear-gradient(\n      to right,\n      transparent,\n      white 60%);\n}\n.rt-overflow:hover .rt-track {\n  animation: rt-scroll var(--rt-speed, 10s) linear infinite;\n}\n.rt-overflow:not(:hover) .rt-track {\n  animation: none;\n  transform: translateX(0);\n}\n@keyframes rt-scroll {\n  from {\n    transform: translateX(0);\n  }\n  to {\n    transform: translateX(var(--rt-distance));\n  }\n}\n');
 
 // src/components/StrInput.tsx
-import { forwardRef as forwardRef2, memo as memo3, useCallback as useCallback2, useMemo as useMemo2, useRef as useRef2 } from "react";
+import { forwardRef as forwardRef2, memo as memo4, useCallback as useCallback3, useMemo as useMemo2, useRef as useRef2 } from "react";
 
 // src/components/InputTemplate.tsx
 import { memo } from "react";
@@ -80,7 +80,10 @@ var InputTemplate = ({
 var InputTemplate_default = memo(InputTemplate);
 
 // src/components/Input.tsx
-import { forwardRef, memo as memo2, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, memo as memo3, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+
+// src/components/NativeInput.tsx
+import { memo as memo2 } from "react";
 
 // src/hooks/ExternalSyncHooks.ts
 import { useCallback, useSyncExternalStore } from "react";
@@ -255,8 +258,16 @@ var useGlobalOptions = (field) => {
   );
 };
 
+// src/components/NativeInput.tsx
+import { jsx as jsx2 } from "react/jsx-runtime";
+var NativeInput = ({ field, fixedValue, inputRef, ...domProps }) => {
+  const value = fixedValue ?? useInputValue(field);
+  return /* @__PURE__ */ jsx2("input", { ref: inputRef, value, ...domProps });
+};
+var NativeInput_default = memo2(NativeInput);
+
 // src/components/Input.tsx
-import { Fragment, jsx as jsx2 } from "react/jsx-runtime";
+import { Fragment, jsx as jsx3 } from "react/jsx-runtime";
 var Input = forwardRef(({
   // name,
   field,
@@ -278,7 +289,6 @@ var Input = forwardRef(({
 }, ref) => {
   const inputRef = useRef(null);
   const { labelMode } = useFormLayout();
-  const value = fixedValue ?? useInputValue(field);
   const handlePreInput = (e) => {
     const evalue = e.target.value;
     if (maxLength && evalue.length > maxLength) {
@@ -298,15 +308,16 @@ var Input = forwardRef(({
     blur: () => {
       inputRef.current?.blur();
     },
-    reset: () => {
+    reset: (keys) => {
+      field.reset(keys);
     },
     position: () => {
       return inputRef.current?.getBoundingClientRect();
     }
-  }), [inputRef.current]);
+  }), [field]);
   const handleBlur = () => {
     onBlur?.({
-      value: value ?? "",
+      value: field.value ?? "",
       data: field.root.data,
       ...fieldHelpers
     });
@@ -321,7 +332,7 @@ var Input = forwardRef(({
   const handleKeyPresses = (event) => {
     if (event.key === "Enter") {
       onEnterPress?.({
-        value: value ?? "",
+        value: field.value ?? "",
         data: field.root.data,
         stopPropagation: () => event.stopPropagation(),
         ...fieldHelpers
@@ -339,27 +350,26 @@ var Input = forwardRef(({
     });
     return () => unsub?.();
   }, [field, fieldHelpers]);
-  return /* @__PURE__ */ jsx2(Fragment, { children: /* @__PURE__ */ jsx2(
-    "input",
+  return /* @__PURE__ */ jsx3(Fragment, { children: /* @__PURE__ */ jsx3(
+    NativeInput_default,
     {
       type,
       id: `floating_input_${field.name}`,
-      ref: inputRef,
+      inputRef,
       onBlur: handleBlur,
       onFocus: handleFocus,
-      value,
-      maxLength,
+      field,
+      fixedValue,
       autoFocus,
       onKeyDown: handleKeyPresses,
       onChange: handlePreInput,
-      className: labelMode ? inputStyles : `field-input`,
-      placeholder: labelMode ? placeholder : " ",
       disabled,
-      required: true
+      className: labelMode ? inputStyles : `field-input`,
+      placeholder: labelMode ? placeholder : " "
     }
   ) });
 });
-var Input_default = memo2(Input);
+var Input_default = memo3(Input);
 
 // src/context/ContainerContext.ts
 import { createContext as createContext2, useContext as useContext2 } from "react";
@@ -799,10 +809,30 @@ var InputField = class extends FormNode {
     const parentPath = getNodePath(this.parent);
     return parentPath ? `${parentPath}.${this.name}` : this.name;
   }
-  getArray = (path) => {
-    const node = resolveTargetNode(this, path);
-    return node instanceof ArrayField ? node.controller : void 0;
-  };
+  // getArray = (path?: string): (ArrayController & { currentIndex: number | undefined }) | undefined => {
+  //     const parent = this.parent
+  //     const currentIndex = parent instanceof ArrayItem ? parent.index : undefined
+  //     if (!path) return parent instanceof ArrayItem ? {...parent.array.controller, currentIndex} : undefined
+  //     const node = resolveTargetNode(this, path);
+  //     return node instanceof ArrayField ? {...node.controller, currentIndex} : undefined;
+  // };
+  getArray(path) {
+    let curr = this.parent;
+    let enclosingItem;
+    while (curr) {
+      if (curr instanceof ArrayItem) {
+        enclosingItem = curr;
+        break;
+      }
+      curr = curr.parent;
+    }
+    const currentIndex = enclosingItem?.index;
+    const targetArray = !path ? enclosingItem?.array : resolveTargetNode(this, path);
+    if (!(targetArray instanceof ArrayField)) return void 0;
+    const scopedController = Object.create(targetArray.controller);
+    scopedController.currentIndex = currentIndex;
+    return scopedController;
+  }
   setFields = (fields) => {
     this.setValue(fields);
   };
@@ -2173,7 +2203,7 @@ var createField = (placeholder, name, inputStore, initialValue, scope) => {
 };
 
 // src/components/StrInput.tsx
-import { jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
+import { jsx as jsx4, jsxs as jsxs2 } from "react/jsx-runtime";
 var StrInput = forwardRef2((props, ref) => {
   const { placeholder, name, children, style, className = "", initialValue = "", required = false, disabled = false, hideElement = false, privacy = false, ...rest } = props;
   const { inputStore } = useContainerContext();
@@ -2197,7 +2227,7 @@ var StrInput = forwardRef2((props, ref) => {
   }, [style]);
   const disabledValue = useIsDisabled(field.current);
   const hiddenValue = useIsHidden(field.current);
-  const handleChange = useCallback2((value) => {
+  const handleChange = useCallback3((value) => {
     const fieldValue = field.current;
     if (!fieldValue) return;
     fieldValue.value = value;
@@ -2206,12 +2236,12 @@ var StrInput = forwardRef2((props, ref) => {
     return null;
   }
   return /* @__PURE__ */ jsxs2("div", { className: `field-root ${styleClass} ${className}`, children: [
-    /* @__PURE__ */ jsx3(
+    /* @__PURE__ */ jsx4(
       InputTemplate_default,
       {
         name: field.current.name,
         placeholder,
-        children: /* @__PURE__ */ jsx3(
+        children: /* @__PURE__ */ jsx4(
           Input_default,
           {
             ref,
@@ -2228,12 +2258,12 @@ var StrInput = forwardRef2((props, ref) => {
     children
   ] });
 });
-var MemoizedStrInput = memo3(StrInput);
+var MemoizedStrInput = memo4(StrInput);
 MemoizedStrInput.displayName = "StrInput";
 var StrInput_default = MemoizedStrInput;
 
 // src/components/NumInput.tsx
-import { forwardRef as forwardRef3, memo as memo4, useCallback as useCallback3, useMemo as useMemo3, useRef as useRef3 } from "react";
+import { forwardRef as forwardRef3, memo as memo5, useCallback as useCallback4, useMemo as useMemo3, useRef as useRef3 } from "react";
 
 // src/Utils/Stringify.ts
 var stringValidation = (data, stringify) => {
@@ -2243,7 +2273,7 @@ var stringValidation = (data, stringify) => {
 };
 
 // src/components/NumInput.tsx
-import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
+import { jsx as jsx5, jsxs as jsxs3 } from "react/jsx-runtime";
 var NumInput = forwardRef3((props, ref) => {
   const { placeholder, name, children, style, className = "", onDisableChange, initialValue = "", required = false, disabled = false, hideElement = false, privacy = false, stringify = false, ...rest } = props;
   const { inputStore } = useContainerContext();
@@ -2267,7 +2297,7 @@ var NumInput = forwardRef3((props, ref) => {
   }, [style]);
   const disabledValue = useIsDisabled(field.current);
   const hiddenValue = useIsHidden(field.current);
-  const handleChange = useCallback3((value) => {
+  const handleChange = useCallback4((value) => {
     const newValue = value === "" ? "" : stringValidation(Number(value), stringify);
     if (newValue === null) return;
     const fieldValue = field.current;
@@ -2277,12 +2307,12 @@ var NumInput = forwardRef3((props, ref) => {
   if (hiddenValue) return null;
   return /* @__PURE__ */ jsxs3("div", { className: `field-root ${styleClass} ${className}`, children: [
     "  ",
-    /* @__PURE__ */ jsx4(
+    /* @__PURE__ */ jsx5(
       InputTemplate_default,
       {
         name: field.current.name,
         placeholder,
-        children: /* @__PURE__ */ jsx4(
+        children: /* @__PURE__ */ jsx5(
           Input_default,
           {
             ref,
@@ -2299,31 +2329,31 @@ var NumInput = forwardRef3((props, ref) => {
     children
   ] });
 });
-var MemoizedNumInput = memo4(NumInput);
+var MemoizedNumInput = memo5(NumInput);
 MemoizedNumInput.displayName = "NumInput";
 var NumInput_default = MemoizedNumInput;
 
 // src/components/ArrayContainer.tsx
-import { memo as memo6, useMemo as useMemo5 } from "react";
+import { memo as memo7, useMemo as useMemo5 } from "react";
 
 // src/hooks/ArrayHooks.ts
-import { useCallback as useCallback4, useSyncExternalStore as useSyncExternalStore2 } from "react";
+import { useCallback as useCallback5, useSyncExternalStore as useSyncExternalStore2 } from "react";
 var useArrayItems = (array) => {
-  const subscribe = useCallback4((cb) => array.subscribe(cb), []);
+  const subscribe = useCallback5((cb) => array.subscribe(cb), []);
   return useSyncExternalStore2(subscribe, () => array.items);
 };
 
 // src/providers/ItemNodeProvider.tsx
-import { memo as memo5, useMemo as useMemo4 } from "react";
-import { jsx as jsx5 } from "react/jsx-runtime";
+import { memo as memo6, useMemo as useMemo4 } from "react";
+import { jsx as jsx6 } from "react/jsx-runtime";
 var ItemNodeProvider = ({ node, children }) => {
   const value = useMemo4(() => ({ node }), [node]);
-  return /* @__PURE__ */ jsx5(NameScopeContext, { value, children });
+  return /* @__PURE__ */ jsx6(NameScopeContext, { value, children });
 };
-var ItemNodeProvider_default = memo5(ItemNodeProvider);
+var ItemNodeProvider_default = memo6(ItemNodeProvider);
 
 // src/components/ArrayContainer.tsx
-import { jsx as jsx6, jsxs as jsxs4 } from "react/jsx-runtime";
+import { jsx as jsx7, jsxs as jsxs4 } from "react/jsx-runtime";
 var ArrayContainer = ({ name, repeat = 1, children, style, append, hidden = false, className = "" }) => {
   const { inputStore } = useContainerContext();
   const parent = useNameScope();
@@ -2340,7 +2370,6 @@ var ArrayContainer = ({ name, repeat = 1, children, style, append, hidden = fals
   ]);
   const items = useArrayItems(array);
   const isHidden = useIsHidden(array);
-  console.log("the items array is", items);
   if (isHidden) {
     return null;
   }
@@ -2348,17 +2377,17 @@ var ArrayContainer = ({ name, repeat = 1, children, style, append, hidden = fals
     // <ArrayContext value={contextValue}>
     /* @__PURE__ */ jsxs4("div", { className: `array-container ${className}`, style, children: [
       items.map((item) => {
-        return /* @__PURE__ */ jsx6(ItemNodeProvider_default, { node: item, children }, item.id);
+        return /* @__PURE__ */ jsx7(ItemNodeProvider_default, { node: item, children }, item.id);
       }),
       typeof append === "function" ? append({ add: array.addItem, itemsCount: items.length }) : append
     ] })
   );
 };
-var ArrayContainer_default = memo6(ArrayContainer);
+var ArrayContainer_default = memo7(ArrayContainer);
 
 // src/components/ObjContainer.tsx
-import { memo as memo7, useMemo as useMemo6 } from "react";
-import { jsx as jsx7 } from "react/jsx-runtime";
+import { memo as memo8, useMemo as useMemo6 } from "react";
+import { jsx as jsx8 } from "react/jsx-runtime";
 var ObjectContainer = ({
   name,
   // inputContainerStyles = '',
@@ -2372,9 +2401,9 @@ var ObjectContainer = ({
     inputStore.registerHidden(field, false);
     return field;
   }, [parent, name]);
-  return /* @__PURE__ */ jsx7(ItemNodeProvider_default, { node: object, children });
+  return /* @__PURE__ */ jsx8(ItemNodeProvider_default, { node: object, children });
 };
-var MemoizedObjectContainer = memo7(ObjectContainer);
+var MemoizedObjectContainer = memo8(ObjectContainer);
 MemoizedObjectContainer.displayName = "ObjectContainer";
 var ObjContainer_default = MemoizedObjectContainer;
 {
@@ -2383,20 +2412,20 @@ var ObjContainer_default = MemoizedObjectContainer;
 }
 
 // src/components/SelectInput.tsx
-import { forwardRef as forwardRef4, memo as memo11, useImperativeHandle as useImperativeHandle2, useMemo as useMemo7, useRef as useRef6 } from "react";
+import { forwardRef as forwardRef4, memo as memo12, useImperativeHandle as useImperativeHandle2, useMemo as useMemo7, useRef as useRef6 } from "react";
 
 // src/components/DropdownModal.tsx
-import { memo as memo10, useCallback as useCallback7, useRef as useRef5 } from "react";
+import { memo as memo11, useCallback as useCallback8, useRef as useRef5 } from "react";
 
 // src/components/DropdownLabel.tsx
-import { memo as memo8, useCallback as useCallback5 } from "react";
-import { jsx as jsx8 } from "react/jsx-runtime";
+import { memo as memo9, useCallback as useCallback6 } from "react";
+import { jsx as jsx9 } from "react/jsx-runtime";
 var DropdownLabel = ({ field }) => {
   const label = useDropdownLabel(field);
-  const toggleDropdown = useCallback5(() => {
+  const toggleDropdown = useCallback6(() => {
     field.toggle();
   }, [field]);
-  return /* @__PURE__ */ jsx8(
+  return /* @__PURE__ */ jsx9(
     "div",
     {
       className: `select-label field-input`,
@@ -2405,11 +2434,11 @@ var DropdownLabel = ({ field }) => {
     }
   );
 };
-var DropdownLabel_default = memo8(DropdownLabel);
+var DropdownLabel_default = memo9(DropdownLabel);
 
 // src/components/DropdownOptions.tsx
-import { memo as memo9, useCallback as useCallback6, useEffect as useEffect2, useRef as useRef4 } from "react";
-import { jsx as jsx9, jsxs as jsxs5 } from "react/jsx-runtime";
+import { memo as memo10, useCallback as useCallback7, useEffect as useEffect2, useRef as useRef4 } from "react";
+import { jsx as jsx10, jsxs as jsxs5 } from "react/jsx-runtime";
 var DropdownOptions = ({ field, searchable = false, parentRef }) => {
   const containerRef = useRef4(null);
   const options = useGlobalOptions(field);
@@ -2436,16 +2465,16 @@ var DropdownOptions = ({ field, searchable = false, parentRef }) => {
       document.removeEventListener("click", handleClickOutside);
     };
   }, [field, parentRef]);
-  const handleSearchChange = useCallback6((e) => {
+  const handleSearchChange = useCallback7((e) => {
     const value = e.target.value;
     GlobalOptionStore.setSearch(value);
   }, [field]);
-  const stopFocusPropagation = useCallback6((e) => {
+  const stopFocusPropagation = useCallback7((e) => {
     e.stopPropagation();
   }, []);
   return /* @__PURE__ */ jsxs5("div", { className: "select-options-container", onKeyDown: GlobalOptionStore.handleKeyDown, onFocus: stopFocusPropagation, tabIndex: -1, ref: containerRef, children: [
     searchable && // <div style={{ paddingBlock: '5px', paddingInline: '10px', borderBottom: '1px solid red' }}>
-    /* @__PURE__ */ jsx9(
+    /* @__PURE__ */ jsx10(
       "input",
       {
         id: `search_${field.name}`,
@@ -2456,11 +2485,11 @@ var DropdownOptions = ({ field, searchable = false, parentRef }) => {
         placeholder: "Search..."
       }
     ),
-    /* @__PURE__ */ jsx9("div", { children: options.map((option, index) => {
+    /* @__PURE__ */ jsx10("div", { children: options.map((option, index) => {
       const optionValue = option.value;
       const optionLabel = option.label;
       const isSelected = optionValue === curValue;
-      return /* @__PURE__ */ jsx9(
+      return /* @__PURE__ */ jsx10(
         "div",
         {
           role: "option",
@@ -2479,19 +2508,19 @@ var DropdownOptions = ({ field, searchable = false, parentRef }) => {
     }) })
   ] });
 };
-var DropdownOptions_default = memo9(DropdownOptions);
+var DropdownOptions_default = memo10(DropdownOptions);
 
 // src/components/DropdownOpen.tsx
-import { jsx as jsx10 } from "react/jsx-runtime";
+import { jsx as jsx11 } from "react/jsx-runtime";
 var DropdownOpen = ({ field, inputRef, searchable }) => {
   const isOpen = useIsOpen(field);
   if (!isOpen) return null;
-  return /* @__PURE__ */ jsx10(DropdownOptions_default, { field, searchable, parentRef: inputRef });
+  return /* @__PURE__ */ jsx11(DropdownOptions_default, { field, searchable, parentRef: inputRef });
 };
 var DropdownOpen_default = DropdownOpen;
 
 // src/components/DropdownModal.tsx
-import { jsx as jsx11, jsxs as jsxs6 } from "react/jsx-runtime";
+import { jsx as jsx12, jsxs as jsxs6 } from "react/jsx-runtime";
 var DropdownModal = ({
   field,
   onBlur,
@@ -2499,14 +2528,14 @@ var DropdownModal = ({
   searchable
 }) => {
   const inputRef = useRef5(null);
-  const openDropdown = useCallback7(() => {
+  const openDropdown = useCallback8(() => {
     if (field._disabled) return;
     field.open();
   }, []);
-  const closeDropdown = useCallback7(() => {
+  const closeDropdown = useCallback8(() => {
     field.close();
   }, []);
-  const handleTabKey = useCallback7((e) => {
+  const handleTabKey = useCallback8((e) => {
     if (e.key === "Tab") {
       closeDropdown();
       onBlur?.({ value: field.value, data: field.root.data, setFields: field.setFields, arrayAction: field.getArray });
@@ -2514,7 +2543,7 @@ var DropdownModal = ({
       return;
     }
   }, []);
-  const handleTabToOpen = useCallback7((e) => {
+  const handleTabToOpen = useCallback8((e) => {
     if (!e.relatedTarget && document.activeElement === e.target) {
       return;
     }
@@ -2532,13 +2561,13 @@ var DropdownModal = ({
       tabIndex: 0,
       className: `select-container`,
       children: [
-        /* @__PURE__ */ jsx11(DropdownLabel_default, { field }),
-        /* @__PURE__ */ jsx11(DropdownOpen_default, { field, inputRef, searchable })
+        /* @__PURE__ */ jsx12(DropdownLabel_default, { field }),
+        /* @__PURE__ */ jsx12(DropdownOpen_default, { field, inputRef, searchable })
       ]
     }
   );
 };
-var DropdownModal_default = memo10(DropdownModal);
+var DropdownModal_default = memo11(DropdownModal);
 
 // src/Utils/DropdownUtils.ts
 var createDropdown = (placeholder, name, options, inputStore, initialValue, initialLabel, includeDefaultLabel, scope) => {
@@ -2579,7 +2608,7 @@ var createDropdown = (placeholder, name, options, inputStore, initialValue, init
 };
 
 // src/components/SelectInput.tsx
-import { jsx as jsx12, jsxs as jsxs7 } from "react/jsx-runtime";
+import { jsx as jsx13, jsxs as jsxs7 } from "react/jsx-runtime";
 var SelectInput = forwardRef4((props, ref) => {
   const {
     name,
@@ -2618,7 +2647,12 @@ var SelectInput = forwardRef4((props, ref) => {
     hideElement && inputStore.registerHidden(fieldInstance, hideElement);
     disabled && inputStore.registerDisabled(fieldInstance, disabled);
     fieldInstance.subscribe(() => {
-      onChange?.({ value: fieldInstance.value, setFields: fieldInstance.setFields, arrayAction: fieldInstance.getArray });
+      onChange?.({
+        value: fieldInstance.value,
+        setFields: (fields) => fieldInstance.setFields(fields),
+        arrayAction: (path) => fieldInstance.getArray(path),
+        reset: (target) => fieldInstance.reset(target)
+      });
     });
     fieldInstance.subscribeToggle(() => {
       onToggleDropdown?.(fieldInstance.isOpen);
@@ -2641,19 +2675,18 @@ var SelectInput = forwardRef4((props, ref) => {
     []
   );
   const hiddenValue = useIsHidden(field.current);
-  console.log("the selectinput rerendering", hiddenValue);
   if (hiddenValue) {
     return null;
   }
   return (
     // <div className={`field-root field-select-root ${styleClass} ${className}`} style={{'--float' : 1, '--anchor-name': `${field.current!.name}`}}>
     /* @__PURE__ */ jsxs7("div", { className: `field-root field-select-root ${styleClass} ${className}`, style: { "--float": 1, "--anchor-name": `${anchorName}` }, children: [
-      /* @__PURE__ */ jsx12(
+      /* @__PURE__ */ jsx13(
         InputTemplate_default,
         {
           name: field.current.name,
           placeholder,
-          children: /* @__PURE__ */ jsx12(
+          children: /* @__PURE__ */ jsx13(
             DropdownModal_default,
             {
               searchable,
@@ -2667,13 +2700,13 @@ var SelectInput = forwardRef4((props, ref) => {
     ] })
   );
 });
-var MemoizedSelectInput = memo11(SelectInput);
+var MemoizedSelectInput = memo12(SelectInput);
 MemoizedSelectInput.displayName = "SelectInput";
 var SelectInput_default = MemoizedSelectInput;
 
 // src/components/AutoInput.tsx
-import { memo as memo12 } from "react";
-import { Fragment as Fragment2, jsx as jsx13 } from "react/jsx-runtime";
+import { memo as memo13 } from "react";
+import { Fragment as Fragment2, jsx as jsx14 } from "react/jsx-runtime";
 var AutoInput = ({ initialData, exclusionKeys }) => {
   const renderField = (key, value, scope) => {
     const modifiedKey = scope ? `${scope}.${key}` : key;
@@ -2683,38 +2716,38 @@ var AutoInput = ({ initialData, exclusionKeys }) => {
       placeholder: fromCamelCase(key)
     };
     if (typeof value === "string") {
-      return /* @__PURE__ */ jsx13(StrInput_default, { ...commonProps }, modifiedKey);
+      return /* @__PURE__ */ jsx14(StrInput_default, { ...commonProps }, modifiedKey);
     }
     if (typeof value === "number") {
-      return /* @__PURE__ */ jsx13(NumInput_default, { ...commonProps }, modifiedKey);
+      return /* @__PURE__ */ jsx14(NumInput_default, { ...commonProps }, modifiedKey);
     }
     if (Array.isArray(value)) {
-      return /* @__PURE__ */ jsx13(
+      return /* @__PURE__ */ jsx14(
         ArrayContainer_default,
         {
           name: key,
-          children: value.map((item, index) => /* @__PURE__ */ jsx13(AutoInput, { initialData: item }, index))
+          children: value.map((item, index) => /* @__PURE__ */ jsx14(AutoInput, { initialData: item }, index))
         },
         key
       );
     }
     if (isPlainObject(value)) {
-      return /* @__PURE__ */ jsx13(ObjContainer_default, { name: key, children: /* @__PURE__ */ jsx13(AutoInput, { initialData: value }) }, modifiedKey);
+      return /* @__PURE__ */ jsx14(ObjContainer_default, { name: key, children: /* @__PURE__ */ jsx14(AutoInput, { initialData: value }) }, modifiedKey);
     }
     return null;
   };
-  return /* @__PURE__ */ jsx13(Fragment2, { children: Object.entries(initialData || {}).map(([key, value]) => {
+  return /* @__PURE__ */ jsx14(Fragment2, { children: Object.entries(initialData || {}).map(([key, value]) => {
     if (exclusionKeys?.includes(key)) return null;
     return renderField(key, value);
   }) });
 };
-var MemoizedAutoInput = memo12(AutoInput);
+var MemoizedAutoInput = memo13(AutoInput);
 MemoizedAutoInput.displayName = "AutoInput";
 var AutoInput_default = MemoizedAutoInput;
 
 // src/components/DateInput.tsx
-import { forwardRef as forwardRef5, memo as memo13, useCallback as useCallback8, useMemo as useMemo8, useRef as useRef7 } from "react";
-import { jsx as jsx14, jsxs as jsxs8 } from "react/jsx-runtime";
+import { forwardRef as forwardRef5, memo as memo14, useCallback as useCallback9, useMemo as useMemo8, useRef as useRef7 } from "react";
+import { jsx as jsx15, jsxs as jsxs8 } from "react/jsx-runtime";
 var DateInput = forwardRef5((props, ref) => {
   const { defaultTodayDate, defaultDate, name, placeholder, hideElement, disabled, style, className, privacy, children, seperator = "/", onFocus, ...rest } = props;
   const { inputStore } = useContainerContext();
@@ -2735,14 +2768,14 @@ var DateInput = forwardRef5((props, ref) => {
     disabled && inputStore.registerDisabled(fieldInstance, disabled);
     field.current = fieldInstance;
   }
-  const handleDateSelect = useCallback8((value) => {
+  const handleDateSelect = useCallback9((value) => {
     console.log("handleDateSelect", value);
     field.current.value = value;
   }, []);
   const styleClass = useMemo8(() => {
     return getStyleClass(style);
   }, [style]);
-  const handleFocus = useCallback8((key, inputRef) => {
+  const handleFocus = useCallback9((key, inputRef) => {
     inputRef.current?.showPicker();
     onFocus?.(key);
   }, [onFocus]);
@@ -2750,12 +2783,12 @@ var DateInput = forwardRef5((props, ref) => {
   const hiddenValue = useIsHidden(field.current);
   if (hiddenValue) return null;
   return /* @__PURE__ */ jsxs8("div", { className: `field-root ${styleClass} ${className}`, children: [
-    /* @__PURE__ */ jsx14(
+    /* @__PURE__ */ jsx15(
       InputTemplate_default,
       {
         name: field.current.name,
         placeholder,
-        children: /* @__PURE__ */ jsx14(
+        children: /* @__PURE__ */ jsx15(
           Input_default,
           {
             ref,
@@ -2773,7 +2806,7 @@ var DateInput = forwardRef5((props, ref) => {
     children
   ] });
 });
-var memoizedDateInput = memo13(DateInput);
+var memoizedDateInput = memo14(DateInput);
 memoizedDateInput.displayName = "DateInput";
 var DateInput_default = memoizedDateInput;
 {
@@ -2782,8 +2815,8 @@ var DateInput_default = memoizedDateInput;
 }
 
 // src/components/DisabledInput.tsx
-import { memo as memo14, useMemo as useMemo9, useRef as useRef8 } from "react";
-import { jsx as jsx15, jsxs as jsxs9 } from "react/jsx-runtime";
+import { memo as memo15, useMemo as useMemo9, useRef as useRef8 } from "react";
+import { jsx as jsx16, jsxs as jsxs9 } from "react/jsx-runtime";
 var DisabledInput = ({
   initialValue = "",
   privacy = false,
@@ -2818,12 +2851,12 @@ var DisabledInput = ({
     return null;
   }
   return /* @__PURE__ */ jsxs9("div", { className: `field-root ${styleClass} ${className}`, children: [
-    /* @__PURE__ */ jsx15(
+    /* @__PURE__ */ jsx16(
       InputTemplate_default,
       {
         name: field.current.name,
         placeholder,
-        children: /* @__PURE__ */ jsx15(
+        children: /* @__PURE__ */ jsx16(
           Input_default,
           {
             field: field.current,
@@ -2839,15 +2872,15 @@ var DisabledInput = ({
     children
   ] });
 };
-var MemoizedDisabledInput = memo14(DisabledInput);
+var MemoizedDisabledInput = memo15(DisabledInput);
 MemoizedDisabledInput.displayName = "DisabledInput";
 var DisabledInput_default = MemoizedDisabledInput;
 {
 }
 
 // src/components/RunningText.tsx
-import { memo as memo15, useLayoutEffect, useRef as useRef9 } from "react";
-import { jsx as jsx16, jsxs as jsxs10 } from "react/jsx-runtime";
+import { memo as memo16, useLayoutEffect, useRef as useRef9 } from "react";
+import { jsx as jsx17, jsxs as jsxs10 } from "react/jsx-runtime";
 var RunningText = ({
   children,
   width,
@@ -2884,24 +2917,24 @@ var RunningText = ({
       }
     }
   }, [children, speed, maxAutoSpeed]);
-  return /* @__PURE__ */ jsx16(
+  return /* @__PURE__ */ jsx17(
     "div",
     {
       ref: containerRef,
       style: { width },
       className: `rt-container ${className}`,
       children: /* @__PURE__ */ jsxs10("div", { className: "rt-track", children: [
-        /* @__PURE__ */ jsx16("div", { ref: contentRef, className: "rt-content", children }),
-        /* @__PURE__ */ jsx16("div", { className: "rt-content rt-duplicate", "aria-hidden": true, children })
+        /* @__PURE__ */ jsx17("div", { ref: contentRef, className: "rt-content", children }),
+        /* @__PURE__ */ jsx17("div", { className: "rt-content rt-duplicate", "aria-hidden": true, children })
       ] })
     }
   );
 };
-var RunningText_default = memo15(RunningText);
+var RunningText_default = memo16(RunningText);
 
 // src/components/FormRow.tsx
-import { memo as memo16, useMemo as useMemo10 } from "react";
-import { jsx as jsx17, jsxs as jsxs11 } from "react/jsx-runtime";
+import { memo as memo17, useMemo as useMemo10 } from "react";
+import { jsx as jsx18, jsxs as jsxs11 } from "react/jsx-runtime";
 var FormRow = ({
   label,
   separator,
@@ -2911,7 +2944,7 @@ var FormRow = ({
   // default alignment width
 }) => {
   const value = useMemo10(() => ({ labelMode: true }), []);
-  return /* @__PURE__ */ jsx17(FormLayoutContext.Provider, { value, children: /* @__PURE__ */ jsxs11(
+  return /* @__PURE__ */ jsx18(FormLayoutContext.Provider, { value, children: /* @__PURE__ */ jsxs11(
     "div",
     {
       className: `
@@ -2922,18 +2955,18 @@ var FormRow = ({
         gridTemplateColumns: `${labelWidth} auto 1fr`
       },
       children: [
-        /* @__PURE__ */ jsx17("div", { className: "whitespace-nowrap", children: label }),
-        /* @__PURE__ */ jsx17("div", { className: "whitespace-nowrap text-center", children: separator ?? null }),
-        /* @__PURE__ */ jsx17("div", { children })
+        /* @__PURE__ */ jsx18("div", { className: "whitespace-nowrap", children: label }),
+        /* @__PURE__ */ jsx18("div", { className: "whitespace-nowrap text-center", children: separator ?? null }),
+        /* @__PURE__ */ jsx18("div", { children })
       ]
     }
   ) });
 };
-var FormRow_default = memo16(FormRow);
+var FormRow_default = memo17(FormRow);
 
 // src/components/SubmitButton.tsx
-import React7, { forwardRef as forwardRef6, memo as memo17, useCallback as useCallback9, useImperativeHandle as useImperativeHandle3, useMemo as useMemo11, useState } from "react";
-import { jsx as jsx18, jsxs as jsxs12 } from "react/jsx-runtime";
+import React7, { forwardRef as forwardRef6, memo as memo18, useCallback as useCallback10, useImperativeHandle as useImperativeHandle3, useMemo as useMemo11, useState } from "react";
+import { jsx as jsx19, jsxs as jsxs12 } from "react/jsx-runtime";
 var SubmitButton = forwardRef6(({
   children,
   className,
@@ -2960,7 +2993,7 @@ var SubmitButton = forwardRef6(({
   const cancel = () => {
     setOpenModal(false);
   };
-  const handleSubmit = useCallback9(async (e) => {
+  const handleSubmit = useCallback10(async (e) => {
     if (disabled || openModal) return;
     if (!onClick && renderConfirmationModel) {
       setOpenModal(true);
@@ -2980,29 +3013,29 @@ var SubmitButton = forwardRef6(({
   }), [handleSubmit]);
   return /* @__PURE__ */ jsxs12("div", { className: `${className}`, onClick: handleSubmit, children: [
     children,
-    openModal ? /* @__PURE__ */ jsx18(
+    openModal ? /* @__PURE__ */ jsx19(
       "div",
       {
         className: `fixed flex cursor-default justify-center items-center z-50 left-0 top-0 w-full h-full bg-gray-500/50 backdrop-blur-lg `,
-        children: /* @__PURE__ */ jsx18(
+        children: /* @__PURE__ */ jsx19(
           "div",
           {
             className: `relative grid rounded-lg shadow-lg bg-gray-400 overflow-y-auto max-h-4/5`,
             style: { height: modalStyle?.height, width: modalStyle?.width || "80%" },
-            children: /* @__PURE__ */ jsx18("div", { className: "", children: typeof renderConfirmationModel === "function" ? renderConfirmationModel({ cancel, success, data: inputStore.data, isDisabled, ...formHelpers }) : React7.isValidElement(renderConfirmationModel) ? React7.cloneElement(renderConfirmationModel, { cancel, success, data: inputStore.data, isDisabled, ...formHelpers }) : null })
+            children: /* @__PURE__ */ jsx19("div", { className: "", children: typeof renderConfirmationModel === "function" ? renderConfirmationModel({ cancel, success, data: inputStore.data, isDisabled, ...formHelpers }) : React7.isValidElement(renderConfirmationModel) ? React7.cloneElement(renderConfirmationModel, { cancel, success, data: inputStore.data, isDisabled, ...formHelpers }) : null })
           }
         )
       }
     ) : null
   ] });
 });
-var MemoizedSubmitButton = memo17(SubmitButton);
+var MemoizedSubmitButton = memo18(SubmitButton);
 MemoizedSubmitButton.displayName = "SubmitButton";
 var SubmitButton_default = MemoizedSubmitButton;
 
 // src/components/InputContainer.tsx
 import { useEffect as useEffect3, useLayoutEffect as useLayoutEffect2, useMemo as useMemo12, useRef as useRef10 } from "react";
-import { memo as memo18 } from "react";
+import { memo as memo19 } from "react";
 
 // src/store/InputStoreRegistry.ts
 var formRegistry = /* @__PURE__ */ new Map();
@@ -3019,7 +3052,7 @@ var getOrCreateFormStore = (formId) => {
 var randomString = (maxLength = 5) => Math.random().toString(36).slice(2, maxLength + 2);
 
 // src/components/InputContainer.tsx
-import { jsx as jsx19 } from "react/jsx-runtime";
+import { jsx as jsx20 } from "react/jsx-runtime";
 var InputContainer = ({ children, className, style, formId, fieldStyle, mode = "default", initialData = {} }) => {
   const randomId = randomString();
   const id = formId || randomId;
@@ -3077,7 +3110,7 @@ var InputContainer = ({ children, className, style, formId, fieldStyle, mode = "
       storeRef.current?.clear();
     };
   }, []);
-  return /* @__PURE__ */ jsx19(ContainerContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsx19(
+  return /* @__PURE__ */ jsx20(ContainerContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsx20(
     "div",
     {
       "data-input-container": true,
@@ -3088,7 +3121,7 @@ var InputContainer = ({ children, className, style, formId, fieldStyle, mode = "
     }
   ) });
 };
-var InputContainer_default = memo18(InputContainer);
+var InputContainer_default = memo19(InputContainer);
 
 // src/store/sharedMemory.ts
 var SharedMemory = class {

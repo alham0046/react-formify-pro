@@ -1,10 +1,11 @@
-import { forwardRef, memo, useEffect, useImperativeHandle, useMemo, useRef, type ComponentProps, type RefObject } from 'react'
+import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, type ComponentProps, type RefObject } from 'react'
 import type { InputRefProps } from '../typeDeclaration/inputProps'
 import { useFormLayout } from '../context/LabelLayoutContext'
 import { useInputValue } from '../hooks/ExternalSyncHooks'
 import type { InputFieldType } from '../store/InputFieldStore'
 // import { useFormHelpers } from '../hooks/useFormActions'
 import type { OnBlur, OnEnterPress, OnInputChange } from '../typeDeclaration/baseProps'
+import NativeInput from './NativeInput'
 // import { useContainerContext } from '../context/ContainerContext'
 // import type { FieldProps } from '../Utils/SetFieldValue'
 
@@ -69,7 +70,7 @@ const Input = forwardRef<InputRefProps, InputProps>(({
     const { labelMode } = useFormLayout()
     // const form = useContainerContext().inputStore
     // const { setFields, setOptions, arrAction } = useFormHelpers()
-    const value: string | number = fixedValue ?? useInputValue(field)
+    // const value: string | number = fixedValue ?? useInputValue(field)
     // const value: string | number = fixedValue ?? useInputStore(field) ?? ""
     const handlePreInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const evalue = e.target.value
@@ -82,7 +83,7 @@ const Input = forwardRef<InputRefProps, InputProps>(({
     // Inside StrInput.tsx (runs once per mounted component, not on every keystroke/blur)
     const fieldHelpers = useMemo(() => ({
         setFields: (fields: Record<string, any>) => field.setFields(fields),
-        arrayAction: (path: string) => field.getArray(path),
+        arrayAction: (path?: string) => field.getArray(path),
         reset: (target?: string | string[]) => field.reset(target),
     }), [field])
 
@@ -93,22 +94,26 @@ const Input = forwardRef<InputRefProps, InputProps>(({
         blur: () => {
             inputRef.current?.blur()
         },
-        reset: () => {
+        reset: (keys?: string[] | string) => {
+            field.reset(keys)
             // inputStore.reset(name)
         },
         position: () => {
             return inputRef.current?.getBoundingClientRect()
         }
-    }), [inputRef.current])
+    }), [field])
+
+    // console.log(y)
 
     const handleBlur = () => {
         // inputStore.stylesStore.disable(name, FieldVisualState.Focus)
         onBlur?.({
-            value: value ?? "",
+            value: field.value ?? "",
             data: field.root.data as Record<string, any>,
             ...fieldHelpers
         })
     }
+    
     const handleFocus = () => {
         // inputStore.stylesStore.enable(name, FieldVisualState.Focus)
         // console.log('blurred')
@@ -124,9 +129,9 @@ const Input = forwardRef<InputRefProps, InputProps>(({
         // console.log('inside keypress', event, event.getModifierState('Control'))
         if (event.key === 'Enter') {
             onEnterPress?.({
-                value: value ?? "",
+                value: field.value ?? "",
                 data: field.root.data as Record<string, any>,
-                stopPropagation : () => event.stopPropagation(),
+                stopPropagation: () => event.stopPropagation(),
                 ...fieldHelpers
             })
             return
@@ -149,7 +154,7 @@ const Input = forwardRef<InputRefProps, InputProps>(({
     return (
         <>
             {/* {console.log('the input value is', field.name)} */}
-            <input
+            {/* <input
                 type={type}
                 id={`floating_input_${field.name}`}
                 ref={inputRef}
@@ -166,6 +171,23 @@ const Input = forwardRef<InputRefProps, InputProps>(({
                 placeholder={labelMode ? placeholder : " "}
                 disabled={disabled}
                 required
+            /> */}
+            <NativeInput
+                type={type}
+                id={`floating_input_${field.name}`}
+                inputRef={inputRef}
+                onBlur={handleBlur}
+                onFocus={handleFocus}
+                field={field}
+                fixedValue={fixedValue}
+                autoFocus={autoFocus}
+                onKeyDown={handleKeyPresses}
+                onChange={handlePreInput}
+                disabled={disabled}
+                className={labelMode ? inputStyles : `field-input`}
+                placeholder={labelMode ? placeholder : " "}
+                // inputStyles={inputStyles}
+                // inputInlineStyle={inputInlineStyle}
             />
         </>
     )

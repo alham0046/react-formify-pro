@@ -38,7 +38,7 @@ export class ArrayField extends FormNode {
         length: this.length,
         add: (args?: AddArgs) => this.addItem(args),
         remove: (index: number) => this.remove(index),
-        clear: () => this.clear(),
+        clear: () => this.clear()
     };
 
     constructor(

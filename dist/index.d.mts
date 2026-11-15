@@ -66,6 +66,7 @@ interface OnInputChangeArgs {
     value: string | number;
     setFields: (field: FieldProps) => void;
     arrayAction: (path: string) => ArrayController | undefined;
+    reset: (keys?: string[] | string) => void;
 }
 type OnInputChange = (args: OnInputChangeArgs) => void;
 interface onEnterPressArgs extends OnInputChangeArgs {

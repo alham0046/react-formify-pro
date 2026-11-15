@@ -25,6 +25,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "prepare": "npm run build",
+    "release": "node scripts/release.js",
     "playground": "npm --prefix example run dev"
   },
   "peerDependencies": {

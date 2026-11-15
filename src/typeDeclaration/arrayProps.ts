@@ -10,4 +10,5 @@ export interface ArrayController {
   add: (args?: AddArgs) => void;
   remove: (index: number) => void;
   clear: () => void;
+  // currentIndex: number | undefined
 }

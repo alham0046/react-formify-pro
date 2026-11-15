@@ -89,7 +89,7 @@ const ArrayContainer: FC<ArrayContainerProps> = ({ name, repeat = 1, children, s
 
     const isHidden: boolean = useIsHidden(array)
 
-    console.log('the items array is', items)
+    // console.log('the items array is', items)
     if (isHidden) {
         return null
     }
