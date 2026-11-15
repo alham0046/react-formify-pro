@@ -1,7 +1,7 @@
-@import './css/Input.css';
-@import './css/RunningText.css';
-@import './css/Array.css';
-@import './css/Select.css';
+@import './Input.css';
+@import './RunningText.css';
+@import './Array.css';
+@import './Select.css';
 
 /* For Chrome, Safari, Edge, Opera remove the arrow for numbers input */
 .input-container input::-webkit-outer-spin-button,
