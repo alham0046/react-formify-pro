@@ -1,5 +1,10 @@
 import './styles.css'
 import './marquee.css'
+import './Select.css'
+import './Input.css'
+import './RunningText.css'
+import './Array.css'
+
 export { default as StrInput } from './components/StrInput';
 export { default as NumInput } from './components/NumInput'
 export { default as ArrayContainer } from './components/ArrayContainer'
