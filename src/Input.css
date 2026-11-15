@@ -2,6 +2,19 @@
     box-sizing: border-box;
 }
 
+.label-input {
+    position: absolute;
+    /* padding-inline: var(--po); */
+    height: 100%;
+    left: var(--field-padding-x);
+    top: 0%;
+    /* transform: translateY(-50%); */
+    display: inline-flex;
+    align-items: center;
+    pointer-events: none;
+    transition: top 200ms ease, transform 200ms ease;
+}
+
 @layer base {
 
     /* =========================
@@ -87,45 +100,19 @@
         transition: border-color 200ms ease;
     }
 
-    /* .field-input {
-        display: block;
-
-        width: 100%;
-        height: var(--field-height);
-
-        padding-inline: var(--field-padding-x);
-
-        border:
-            var(--field-border-width) solid var(--field-border-color);
-
-        border-radius: var(--field-radius);
-
-        outline: none;
-
-        background: var(--field-background);
-
-        color: inherit;
-
-        transition:
-            border-color 200ms ease,
-            box-shadow 200ms ease;
-    } */
-
     /* =========================
    LABEL BASE
 ========================= */
-    .label-input {
+    /* .label-input {
         position: absolute;
-        /* padding-inline: var(--po); */
         height: 100%;
         left: var(--field-padding-x);
         top: 0%;
-        /* transform: translateY(-50%); */
         display: inline-flex;
         align-items: center;
         pointer-events: none;
         transition: top 200ms ease, transform 200ms ease;
-    }
+    } */
 
     /* =========================
    PLACEHOLDER TEXT

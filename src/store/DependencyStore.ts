@@ -32,6 +32,7 @@ export class DependencyStore {
         this.listeners.get(field)!.get(property)!.add(cb)
 
         return () => {
+            if (!this.listeners.has(field)) return
             if (this.listeners.get(field)!.has(property)) {
                 this.listeners.get(field)!.get(property)!.delete(cb)
             }
