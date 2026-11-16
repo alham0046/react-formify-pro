@@ -32,24 +32,22 @@ interface ArrayContainerProps {
     name: string;
     repeat?: number;
     // getKey?: (item: any, index: number) => string;
-    // initialValue?: any[]
+    initialValue?: any[]
     hidden?: boolean | string
     append?: ((props: ArrayContainerSlotProps) => ReactNode)
     children: ReactNode
     style?: React.CSSProperties
     className?: string
 }
-const ArrayContainer: FC<ArrayContainerProps> = ({ name, repeat = 1, children, style, append, hidden = false, className = "" }) => {
+const ArrayContainer: FC<ArrayContainerProps> = ({ name, repeat = 1, children, style, append, initialValue, hidden = false, className = "" }) => {
     const { inputStore } = useContainerContext()
     const parent = useNameScope()
     const array: ArrayFieldType = useMemo(() => {
         const parentNode =
             parent?.node ?? inputStore
 
-        // console.log('is array container rerendering')
-
         const field = parentNode.createArray(name)
-        field.initializeArrayItem(repeat)
+        field.initializeArrayItem(repeat, initialValue)
         inputStore.registerHidden(field, hidden)
         return field
 

@@ -1,107 +1,131 @@
-import { forwardRef, memo, useEffect, useRef } from "react"
+import { CSSProperties, forwardRef, memo, useMemo, useRef } from "react"
 import { type InputProps, type InputRefProps } from "../typeDeclaration/inputProps"
-import { useFieldName } from "../hooks/useFieldName"
-import { handleInitialValue } from "../Utils/setInitialValue"
-import { useComputedExpression } from "../hooks/useComputedExpression"
-import InputTemplate, { type InputStyle } from "./InputTemplate"
-import DropdownSearchModal from "./DropdownSearchModal"
+import InputTemplate from "./InputTemplate"
 import Input from "./Input"
 import { useContainerContext } from "../context/ContainerContext"
-import type { DropdownStyleProp, TWDropdownStyleProp, TWInputStyleProp } from "../typeDeclaration/stylesProps"
-import { DropdownContext } from "../context/DropdownContext"
-import { useStyles } from "../hooks/useStylingMods"
+import { InputFieldType } from "../store/InputFieldStore"
+import { createField } from "../Utils/FieldUtils"
+import { useNameScope } from "../context/NameScopeContext"
+import { getStyleClass } from "../Utils/StyleInjection"
+import { useIsDisabled, useIsHidden } from "../hooks/ExternalSyncHooks"
+import DropdownOpen from "./DropdownOpen"
+import { DropdownField, DropdownFieldType } from "../store/DropdownStore"
+import { GlobalOptionStore } from "../store/GlobalOptionStore"
 type SearchOnChange<T> = (
     value: string | number
 ) => T[] | Promise<T[]>
 
-type SearchInputBaseProps = Omit<InputProps, "onChange" | "style">
+type SearchInputBaseProps = Omit<InputProps, "onChange">
 
 interface SearchInputProps<T> extends SearchInputBaseProps {
     onChange: SearchOnChange<T>
-    twStyle?: Partial<TWDropdownStyleProp & TWInputStyleProp>
-    style?: Partial<InputStyle & DropdownStyleProp>
     renderItem?: (item: T, index: number, active: boolean) => React.ReactNode
     onSelect?: (item: T) => void
 }
 
 const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props }, ref) => {
-    const { placeholder, name, children, onChange, style, twStyle, renderItem, onSelect, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props
+    const { placeholder, name, children, onChange, style, className = "", renderItem, onSelect, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props
     const { inputStore } = useContainerContext()
+    const scope = useNameScope()
+
+    const searchRef = useRef<HTMLDivElement | null>(null)
+
+    const anchorName = useRef(
+        `--field-anchor-${crypto.randomUUID()}`
+    ).current;
     // const [search, setSearch] = useState<any[]>([])
     const timeOutObj = useRef<any>(null)
-    const modifiedName = useFieldName(placeholder, name)
-    useEffect(() => {
-        handleInitialValue(modifiedName, initialValue, inputStore)
-    }, [])
+    const field = useRef<InputFieldType | null>(null)
 
-    const { resolvedStyle, tw } = useStyles(style, twStyle!, "dropdown")
+    const dropdownField = useRef<DropdownFieldType | null>(null)
+    if (field.current === null) {
+        const fieldInstance = createField(
+            placeholder,
+            name,
+            inputStore,
+            initialValue,
+            scope
+        ) as InputFieldType
+        fieldInstance.displayCode = 'StrInput'
+        hideElement && inputStore.registerHidden(fieldInstance, hideElement)
+        disabled && inputStore.registerDisabled(fieldInstance, disabled)
+        const dropdownFieldInstance = new DropdownField('search-internal', "", [], null as any, null as any, "")
+        dropdownFieldInstance.displayCode = 'SearchInput'
+        dropdownFieldInstance.subscribe(() => {
+            fieldInstance.value = dropdownFieldInstance.value
+            onSelect?.(dropdownFieldInstance.value)
+        })
+        field.current = fieldInstance  //// Here field is mutating current only once. Not a big performance hit but still its faster and a point to learn
+        dropdownField.current = dropdownFieldInstance
+    }
 
-    const { boxWidth, containerStyles, inputInlineStyle } = resolvedStyle
+    const styleClass = useMemo(() => {
+        return getStyleClass(style)
+    }, [style])
 
-    const disabledValue: boolean = useComputedExpression(disabled, modifiedName)
+    // useEffect(() => {
+    //     inputStore.validatorStore.register(modifiedName, {required, validators: []})
+    // }, [required])
 
-    const hiddenValue: boolean = useComputedExpression(hideElement)
+    const disabledValue: boolean = useIsDisabled(field.current!)
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const changedValue = e.target.value
+    const hiddenValue: boolean = useIsHidden(field.current!)
+
+    const handleChange = (value: string | number) => {
+        // const changedValue = e.target.value
         clearTimeout(timeOutObj.current)
         timeOutObj.current = setTimeout(async () => {
             // setSearch(value as string)
-            const searchedData = await onChange(changedValue)
-            // console.log('searchedData', searchedData)
-            inputStore.setDropdownSearch(`d_${modifiedName}`, searchedData)
-            // setSearch(searchedData)
+            if (!value) return
+            const searchedData = await onChange(value)
+            console.log('the searched data is', searchedData)
+            const dropdownInstance = dropdownField.current
+            if (!dropdownInstance) return
+            dropdownInstance.options = searchedData
+            dropdownInstance.open()
+            // console.log('the options are', dropdownInstance._options)
         }, 800);
-        inputStore.setValue(modifiedName, changedValue)
-    }
-
-
-    const handleSelect = (value: string) => {
-        // onChange(value)
-        inputStore.setValue(modifiedName, value)
-        onSelect?.(value)
-
-        // setSearch([])
+        const fieldValue = field.current
+        if (!fieldValue) return
+        fieldValue.value = value
     }
 
     if (hiddenValue) return null
 
     return (
-        <DropdownContext.Provider value={{ twHighlightedStyles: tw.twHighlightedStyles, highlightedStyle: resolvedStyle.highlightedStyles }}>
-            <div className={`relative ${tw.twContainerStyles}`} style={{ ...containerStyles, width: boxWidth }} /* style={{ display: hiddenValue ? 'none' : 'block', position : 'relative' }} */>
-                {/* {console.log('rendering StrInput', modifiedName)} */}
-                <InputTemplate
-                    name={modifiedName}
+        <div
+            className={`field-root select-container ${styleClass} ${className}`}
+            ref={(el) => {
+                if (el) {
+                    dropdownField.current!.el = el
+                }
+            }}
+            onKeyDown={GlobalOptionStore.handleKeyDown}
+            style={{ '--anchor-name': `${anchorName}` } as CSSProperties}
+        >
+            {/* {console.log('rendering StrInput', modifiedName)} */}
+            
+            <InputTemplate
+                name={field.current.name}
+                placeholder={placeholder}
+            >
+                <Input
+                    ref={ref}
+                    field={field.current}
+                    refRequired={true}
                     placeholder={placeholder}
-                    childType="input"
-                    style={resolvedStyle}
-                    placeholderStyles={tw.twPlaceholderStyles}
-                >
-                    <Input
-                        ref={ref}
-                        name={modifiedName}
-                        refRequired={true}
-                        placeholder={placeholder}
-                        // onChange={onValueChange}
-                        inputInlineStyle={inputInlineStyle}
-                        inputStyles={tw.twInputStyles}
-                        disabled={disabledValue}
-                        type={privacy ? 'password' : 'text'}
-                        handleChange={handleChange}
-                        // onKeyDown={(e) => {
-                        //     if (['ArrowDown', 'ArrowUp'].includes(e.key)) {
-                        //         e.preventDefault()
-                        //     }
-                        // }}
-                        {...rest}
-                    />
-                </InputTemplate>
-                <DropdownSearchModal onSelect={handleSelect} twOptionBoxStyles={tw.twOptionBoxStyles!} twOptionItemStyles={tw.twOptionItemStyles!} renderItem={renderItem} name={modifiedName} dropdownOffset={resolvedStyle.dropdownOffset!} />
-                {/* <DropdownSearchModal onSelect={handleSelect} twStyle={tw} renderItem={renderItem} name={modifiedName} style={resolvedStyle} /> */}
-                {/* <DropdownSearchModal options={search} onSelect={handleSelect} open={search.length > 0} renderItem={renderItem} /> */}
-                {children}
-            </div>
-        </DropdownContext.Provider>
+                    disabled={disabledValue}
+                    type={'text'}
+                    handleChange={handleChange}
+                    {...rest}
+                />
+            </InputTemplate>
+            {/* <DropdownSearchModal onSelect={handleSelect} twOptionBoxStyles={tw.twOptionBoxStyles!} twOptionItemStyles={tw.twOptionItemStyles!} renderItem={renderItem} name={modifiedName} dropdownOffset={resolvedStyle.dropdownOffset!} /> */}
+            <DropdownOpen field={dropdownField.current!} inputRef={searchRef} searchable={false} renderItem={renderItem} />
+            {/* <DropdownSearchModal onSelect={handleSelect} twStyle={tw} renderItem={renderItem} name={modifiedName} style={resolvedStyle} /> */}
+            {/* <DropdownSearchModal options={search} onSelect={handleSelect} open={search.length > 0} renderItem={renderItem} /> */}
+            {children}
+        </div>
     )
 })
 

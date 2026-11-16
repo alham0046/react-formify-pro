@@ -4,14 +4,21 @@ import { useGlobalOptions } from '../hooks/ExternalSyncHooks'
 import { GlobalOptionStore } from '../store/GlobalOptionStore'
 import type { DropdownDependencyFieldType } from '../store/DropdownDepStore'
 
-const DropdownOptions: React.FC<{ field: DropdownFieldType | DropdownDependencyFieldType, searchable: boolean, parentRef: React.RefObject<HTMLDivElement | null> }> = ({ field, searchable = false, parentRef }) => {
+interface DropdownOptionsProps {
+  field: DropdownFieldType | DropdownDependencyFieldType
+  searchable: boolean
+  parentRef: React.RefObject<HTMLDivElement | null>
+  renderItem?: (item: any, index: number, active: boolean) => React.ReactNode
+}
+
+const DropdownOptions: React.FC<DropdownOptionsProps> = ({ field, searchable = false, parentRef, renderItem }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const options = useGlobalOptions(field)
   const lastIndex = options.length - 1
   const curValue = field.value
   useEffect(() => {
     if (!searchable && containerRef.current) {
-      containerRef.current.focus()
+      field.displayCode === 2 && containerRef.current.focus()
     }
   }, [])
 
@@ -26,7 +33,7 @@ const DropdownOptions: React.FC<{ field: DropdownFieldType | DropdownDependencyF
 
       // 2. Check if click was outside BOTH the options list AND the parent trigger box
       const clickedInsideOptions = containerRef.current?.contains(target)
-      const clickedInsideParent = parentRef.current?.contains(target)
+      const clickedInsideParent = field.el?.contains(target)
 
       if (!clickedInsideOptions && !clickedInsideParent) {
         console.log('closing dropdown with outside click')
@@ -39,7 +46,7 @@ const DropdownOptions: React.FC<{ field: DropdownFieldType | DropdownDependencyF
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [field, parentRef])
+  }, [field, field])
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -52,17 +59,29 @@ const DropdownOptions: React.FC<{ field: DropdownFieldType | DropdownDependencyF
 
 
   return (
-    <div className='select-options-container' onKeyDown={GlobalOptionStore.handleKeyDown} onFocus={stopFocusPropagation} tabIndex={-1} ref={containerRef}>
+    <div
+      className='select-options-container'
+      onKeyDown={GlobalOptionStore.handleKeyDown}
+      onFocus={stopFocusPropagation}
+      tabIndex={-1}
+      ref={containerRef}
+      // ref={(el) => {
+      //   if (el) {
+      //     field.displayCode === 2 && el.focus()
+      //     // containerRef.current = el
+      //   }
+      // }}
+    >
       {searchable && (
         // <div style={{ paddingBlock: '5px', paddingInline: '10px', borderBottom: '1px solid red' }}>
-          <input
-            id={`search_${field.name}`}
-            autoFocus
-            onFocus={stopFocusPropagation}
-            onChange={handleSearchChange}
-            className="select-search"
-            placeholder="Search..."
-          />
+        <input
+          id={`search_${field.name}`}
+          autoFocus
+          onFocus={stopFocusPropagation}
+          onChange={handleSearchChange}
+          className="select-search"
+          placeholder="Search..."
+        />
         // </div>
       )}
       <div>
@@ -71,6 +90,7 @@ const DropdownOptions: React.FC<{ field: DropdownFieldType | DropdownDependencyF
             const optionValue = option.value
             const optionLabel = option.label
             const isSelected = optionValue === curValue
+            // const itemKey = typeof optionValue === 'object' ? index : `${optionValue}_${index}`
             return (
               <div
                 key={optionLabel}
@@ -84,7 +104,10 @@ const DropdownOptions: React.FC<{ field: DropdownFieldType | DropdownDependencyF
                 className={`select-option`}
                 onClick={() => GlobalOptionStore.select(index)}
               >
-                {optionLabel}
+                {/* {optionLabel} */}
+                {
+                  renderItem ? renderItem(option.raw ?? optionValue, index, isSelected) : optionLabel
+                }
               </div>
             )
           })

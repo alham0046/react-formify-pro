@@ -73,6 +73,7 @@ function hashObject(obj: FieldStyle): string {
 
     for (let i = 0; i < targets.length; i++) {
         const target = targets[i]
+        if (target === undefined || target === null) continue
         const targetStyle = obj[target as StrInputTarget]
         if (!targetStyle) continue
 
@@ -84,6 +85,7 @@ function hashObject(obj: FieldStyle): string {
         const keys = Object.keys(targetStyle).sort()
         for (let j = 0; j < keys.length; j++) {
             const key = keys[j]
+            if (key === undefined || key === null) continue
             const val = (targetStyle as Record<string, any>)[key]
             if (val === undefined || val === null) continue
 
@@ -96,6 +98,7 @@ function hashObject(obj: FieldStyle): string {
                 const subKeys = Object.keys(val).sort()
                 for (let k = 0; k < subKeys.length; k++) {
                     const sk = subKeys[k]
+                    if (sk === undefined || sk === null) continue
                     const sv = val[sk]
                     const entry = `${sk}:${sv}`
                     for (let c = 0; c < entry.length; c++) {
@@ -187,6 +190,66 @@ export function getStyleClass(style?: FieldStyle): string {
 
 
 
+
+export type OptionSlotStyle = {
+    base?: CSSProperties
+    active?: CSSProperties
+    selected?: CSSProperties
+    // hover?: CSSProperties
+}
+
+const slotRefCache = new WeakMap<object, string>()
+
+export function stateStyle(styles?: OptionSlotStyle): string {
+    if (!styles) return ""
+
+    // 1. O(1) WeakMap lookup if user passes a stable object
+    const cached = slotRefCache.get(styles)
+    if (cached) return cached
+
+    // 2. Hash & check StyleRegistry cache (covers inline objects passed inside renderItem!)
+    const hash = hashObject(styles as any)
+    const className = `opt-slot-${hash}`
+
+    if (styleCache.has(hash)) {
+        slotRefCache.set(styles, className)
+        return className
+    }
+
+    // 3. Build ancestor-scoped rules tied to .select-option attributes
+    let css = ""
+    if (styles.base) {
+        css += `.${className}{${serializeProps(styles.base)}}`
+    }
+    // if (styles.hover) {
+    //     css += `.select-option:hover .${className}{${serializeProps(styles.hover)}}`
+    // }
+    if (styles.active) {
+        css += `.select-option[data-active="true"] .${className}{${serializeProps(styles.active)}}`
+    }
+    if (styles.selected) {
+        css += `.select-option[aria-selected="true"] .${className}{${serializeProps(styles.selected)}}`
+    }
+
+    injectCSS(css)
+    styleCache.set(hash, className)
+    slotRefCache.set(styles, className)
+    return className
+}
+
+function serializeProps(styles: Record<string, any>): string {
+  let rules = ""
+  for (const [key, val] of Object.entries(styles)) {
+    if (val === undefined || val === null) continue
+    const cssKey = toKebab(key)
+    const formatted =
+      typeof val === "number" && !UNITLESS.has(cssKey) && !cssKey.startsWith("--")
+        ? `${val}px`
+        : val
+    rules += `${cssKey}:${formatted};`
+  }
+  return rules
+}
 
 
 

@@ -1,9 +1,11 @@
+import { RefObject } from "react"
 import { isArray } from "../functions/dataTypesValidation"
 import type { ArrayController } from "../typeDeclaration/arrayProps"
 import type { NodeWithFields } from "../typeDeclaration/nodeProps"
 import { resolveTargetNode } from "../Utils/NodeResolver"
 import { getNodePath } from "../Utils/PathUtils"
-import { ArrayField, type ArrayItemType } from "./ArrayStore"
+import { ArrayField, ArrayItem, type ArrayItemType } from "./ArrayStore"
+import { FlatNode } from "./FlatNode"
 import { FormNode } from "./FormNode"
 import type { FormObjectType } from "./FormObject"
 import { GlobalOptionStore } from "./GlobalOptionStore"
@@ -15,6 +17,7 @@ export class DropdownField extends FormNode {
     private _initialValue: string = ""
     public label: string = ""
     public dirty: boolean = false
+    private _inputel: HTMLDivElement | null = null
     private _inputCode: number = 2
     public _options: { value: any, label: string }[] = []
     private valueOptionMap = new Map<any, { value: any, label: string }>()
@@ -32,10 +35,10 @@ export class DropdownField extends FormNode {
         public defaultLabel: string = "Select",
         private includeDefaultLabel: boolean = false
     ) {
-        super(name, parent.root)
+        super(name, parent?.root || null)
         this._value = value || ""
         this._initialValue = value || ""
-        this._dataParent[name] = this._value
+        if (this._dataParent)this._dataParent[name] = this._value 
         if (options) this.options = options
         this.label = this.valueOptionMap.get(value)?.label || this.defaultLabel
     }
@@ -111,16 +114,24 @@ export class DropdownField extends FormNode {
         this.valueOptionMap.delete(value)
     }
 
-    set options(options: { value: any, label: string }[] | string[]) {
-        let initOptions: { value: any, label: string }[] = []
+    set options(options: { value: any, label: string }[] | string[] | any[]) {
+        if (!isArray(options)) return
+        let initOptions: { value: any, label: string, raw?: any }[] = []
         if (this.includeDefaultLabel) initOptions.push({ value: "", label: this.defaultLabel })
+        
         if (typeof options[0] === "string") {
             for (const option of (options as string[])) {
                 initOptions.push({ value: option, label: option })
             }
         }
-        else {
+        else if (options[0] && "value" in options[0] && "label" in options[0]) {
             initOptions = options as { value: any, label: string }[]
+        } else {
+            for (const item of options) {
+                const val = item.id ?? item.value ?? item
+                const lbl = item.label ?? item.title ?? item.name ?? String(val)
+                initOptions.push({ value: val, label: lbl, raw: item })
+            }
         }
         
         this._options = initOptions
@@ -128,6 +139,14 @@ export class DropdownField extends FormNode {
         initOptions.forEach(opt => {
             this.valueOptionMap.set(opt.value, opt)
         })
+    }
+
+    set el(el : HTMLDivElement | null) {
+        this._inputel = el
+    }
+
+    get el() : HTMLDivElement | null {
+        return this._inputel
     }
 
     open() {
@@ -160,6 +179,10 @@ export class DropdownField extends FormNode {
         if (this._value === v) return
         this._value = v
         this.label = this.valueOptionMap.get(v)?.label || this.defaultLabel
+        if (!this.root) {
+            this.notify()
+            return
+        }
         // Track dirty state only when form is in "edit" mode
         if (this.root.mode === "edit") {
             const isNowDirty = v !== this._initialValue
@@ -178,10 +201,37 @@ export class DropdownField extends FormNode {
             this._inputCode = fieldCode[displayName]
     }
 
-    getArray = (path: string): ArrayController | undefined => {
-        const node = resolveTargetNode(this, path);
-        return node instanceof ArrayField ? node.controller : undefined;
-    };
+    // getArray = (path?: string): ArrayController | undefined => {
+    //     const node = resolveTargetNode(this, path);
+    //     return node instanceof ArrayField ? node.controller : undefined;
+    // };
+
+    public getArray(path?: string): (ArrayController & { currentIndex?: number }) | undefined {
+        // 1. Walk up to find the nearest enclosing ArrayItem (handles nested ObjectContainer inside ArrayItem)
+        let curr: any = this.parent
+        let enclosingItem: ArrayItem | undefined
+        while (curr) {
+            if (curr instanceof ArrayItem) {
+                enclosingItem = curr
+                break
+            }
+            curr = curr.parent
+        }
+
+        const currentIndex = enclosingItem?.index
+
+        // 2. If no path is provided, target the enclosing array directly
+        const targetArray = !path
+            ? enclosingItem?.array
+            : resolveTargetNode(this as any, path)
+
+        if (!(targetArray instanceof ArrayField)) return undefined
+
+        // 3. Inherit live getters (like `length`) from controller without cloning methods
+        const scopedController = Object.create(targetArray.controller)
+        scopedController.currentIndex = currentIndex
+        return scopedController
+    }
 
     getPath(): string {
 

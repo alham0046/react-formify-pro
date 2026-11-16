@@ -63,7 +63,7 @@ const SelectInput= forwardRef<DropdownRefType, SelectProps>((props, ref) => {
             onChange?.({
                 value : fieldInstance.value,
                 setFields : (fields: Record<string, any>) => fieldInstance.setFields(fields),
-                arrayAction : (path: string) => fieldInstance.getArray(path),
+                arrayAction : (path?: string) => fieldInstance.getArray(path),
                 reset: (target?: string | string[]) => fieldInstance.reset(target)
             })
         })

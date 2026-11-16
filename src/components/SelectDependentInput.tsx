@@ -25,7 +25,7 @@ const SelectDependentInput = forwardRef<DropdownRefType, SelectDependentProps>((
     disabled = false,
     hideElement = false,
     searchable = false,
-    // initialValue = '',
+    initialValue = '',
     style,
     className = '',
     ...rest
@@ -46,7 +46,7 @@ const SelectDependentInput = forwardRef<DropdownRefType, SelectDependentProps>((
             name,
             options,
             inputStore,
-            // initialValue,
+            initialValue,
             initialLabel,
             includeDefaultLabel,
             dependsOn,
@@ -57,7 +57,12 @@ const SelectDependentInput = forwardRef<DropdownRefType, SelectDependentProps>((
         disabled && inputStore.registerDisabled(fieldInstance, disabled)
         fieldInstance.subscribe(() => {
             // const setFields = inputStore.setFields
-            onChange?.({ value: fieldInstance.value, setFields : fieldInstance.setFields, arrayAction : fieldInstance.getArray })
+            onChange?.({
+                value: fieldInstance.value,
+                setFields : (field : Record<string, any>) => fieldInstance.setFields(field),
+                arrayAction : (path?: string) => fieldInstance.getArray(path),
+                reset: (target?: string | string[]) => fieldInstance.reset(target)
+            })
         })
         fieldInstance.subscribeToggle(() => {
             onToggleDropdown?.(fieldInstance.isOpen)

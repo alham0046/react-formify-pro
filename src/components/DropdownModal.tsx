@@ -168,10 +168,12 @@ const DropdownModal: FC<DropdownModalProps> = ({
     }, [])
 
     const handleTabKey = useCallback((e : React.KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === "Tab") {
-          closeDropdown()
-          onBlur?.({value: field.value, data: field.root.data as Record<string, any>, setFields : field.setFields, arrayAction : field.getArray})
-          console.log('tab to close')
+        console.log('the pressed key is', e.key)
+        if (e.key === "Enter") {
+            openDropdown()
+        //   closeDropdown()
+        //   onBlur?.({value: field.value, data: field.root.data as Record<string, any>, setFields : field.setFields, arrayAction : field.getArray})
+        //   console.log('tab to close')
           return // allow normal tab navigation
         }
     },[])
@@ -197,7 +199,13 @@ const DropdownModal: FC<DropdownModalProps> = ({
 
     return (
         <div
-            ref={inputRef}
+            ref={(el) => {
+                if (!el) return
+                field.el = el
+                // const mainRef = field.inputref;
+                // if (mainRef) mainRef.current = el;
+                inputRef.current = el
+            }}
             onMouseDown={(e) => e.preventDefault()}
             onFocus={handleTabToOpen}
             onKeyDown={handleTabKey}

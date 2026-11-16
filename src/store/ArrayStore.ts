@@ -13,6 +13,14 @@ import type { InputFormType } from "./InputFormStore"
 
 // ArrayField.ts
 
+type SingleItem = Record<string, any>
+
+type IndexedItem = { index: number } & Record<string, any>;
+
+type ArrayedItem = SingleItem[] | IndexedItem[]
+
+type InitialValueType = Record<string, any> | Record<string, any>[] | IndexedItem
+
 
 export class ArrayField extends FormNode {
 
@@ -168,28 +176,31 @@ export class ArrayField extends FormNode {
         }
     }
 
-    initializeArrayItem(repeat: number, initialValue?: Record<string, any>) {
-        for (let i = 0; i < repeat; i++) {
-            const item = new ArrayItem(
-                this,
-                initialValue,
-                this.data
-            )
-            // this.items.push(item)
-            this.items = [...this.items, item]
-        }
-        this.notify()
+    initializeArrayItem(repeat: number = 1, initialValue?: InitialValueType) {
+        // const rep = repeat 
+        this.addItem({count : repeat, initialValue})
+        // for (let i = 0; i < repeat; i++) {
+        //     const item = new ArrayItem(
+        //         this,
+        //         initialValue,
+        //         this.data
+        //     )
+        //     // this.items.push(item)
+        //     this.items = [...this.items, item]
+        // }
+        // this.notify()
     }
 
     addItem = (args?: AddArgs) => {
         const initialValue = args?.initialValue
         const count = args?.count ?? initialValue?.length ?? 1
         const index = args?.index
+
         const isMultiple = count > 1 || Array.isArray(initialValue)
         if (isMultiple) {
-            this.addMultiple(count, (initialValue as Record<string, any>[]), index)
+            this.addMultiple(count, (initialValue as ArrayedItem), index)
         } else {
-            this.add(args?.initialValue, index)
+            this.add(initialValue, index)
         }
     }
 

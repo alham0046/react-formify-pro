@@ -1,3 +1,4 @@
+import { RefObject } from "react";
 import type { ArrayController } from "../typeDeclaration/arrayProps";
 import type { FlatFieldNode, NodeWithFields } from "../typeDeclaration/nodeProps";
 import { resolveTargetNode } from "../Utils/NodeResolver";
@@ -13,6 +14,7 @@ export class DropdownDependencyField extends FormNode {
     private _initialValue: string = ""
     public label: string = ""
     public dirty: boolean = false
+    private _inputel: HTMLDivElement | null = null
     public _cascadeOptionMap = new Map<any, { value: any, label: string }[]>()
     public _options: { value: any, label: string }[] = []
     private valueOptionMap = new Map<any, { value: any, label: string }>()
@@ -107,6 +109,14 @@ export class DropdownDependencyField extends FormNode {
         }
     }
 
+    set el(el: HTMLDivElement | null) {
+        this._inputel = el
+    }
+
+    get el(): HTMLDivElement | null {
+        return this._inputel
+    }
+
     open() {
         if (this._isOpen === true || this._disabled) return
         this._isOpen = true
@@ -189,15 +199,15 @@ export class DropdownDependencyField extends FormNode {
         if (!key || isCurrentNode) {
             this.value = this._initialValue
         } else {
-        if (Array.isArray(key)) {
-            key.forEach(k => {
-                const node = resolveTargetNode(this, k)
+            if (Array.isArray(key)) {
+                key.forEach(k => {
+                    const node = resolveTargetNode(this, k)
+                    if (node) node.reset()
+                })
+            } else {
+                const node = resolveTargetNode(this, key)
                 if (node) node.reset()
-            })
-        } else {
-            const node = resolveTargetNode(this, key)
-            if (node) node.reset()
-        }
+            }
         }
     }
 

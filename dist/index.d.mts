@@ -1,10 +1,13 @@
 import * as react from 'react';
 import react__default, { ReactNode, CSSProperties, ReactElement, MouseEvent } from 'react';
 
+type IndexedItem = {
+    index: number;
+} & Record<string, any>;
 interface AddArgs {
     index?: number;
     count?: number;
-    initialValue?: Record<string, any>[] | Record<string, any>;
+    initialValue?: Record<string, any>[] | Record<string, any> | IndexedItem[];
 }
 interface ArrayController {
     readonly length: number;
@@ -20,13 +23,14 @@ interface ArrayContainerSlotProps {
 interface ArrayContainerProps {
     name: string;
     repeat?: number;
+    initialValue?: any[];
     hidden?: boolean | string;
     append?: ((props: ArrayContainerSlotProps) => ReactNode);
     children: ReactNode;
     style?: React.CSSProperties;
     className?: string;
 }
-declare const _default$3: react.NamedExoticComponent<ArrayContainerProps>;
+declare const _default$4: react.NamedExoticComponent<ArrayContainerProps>;
 
 type ElementStyle = CSSProperties & {
     focus?: CSSProperties;
@@ -40,6 +44,12 @@ type StrInputTarget = "root" | "input" | "placeholder" | "line" | "template" | "
 type FieldStyle = {
     [K in StrInputTarget]?: ElementStyle;
 };
+type OptionSlotStyle = {
+    base?: CSSProperties;
+    active?: CSSProperties;
+    selected?: CSSProperties;
+};
+declare function stateStyle(styles?: OptionSlotStyle): string;
 
 interface BaseInputProps {
     placeholder: string;
@@ -188,7 +198,7 @@ interface RunningTextProps {
     speed?: number;
     maxAutoSpeed?: number;
 }
-declare const _default$2: react__default.NamedExoticComponent<RunningTextProps>;
+declare const _default$3: react__default.NamedExoticComponent<RunningTextProps>;
 
 interface FormRowProps {
     label: React.ReactNode;
@@ -197,7 +207,16 @@ interface FormRowProps {
     className?: string;
     labelWidth?: string | number;
 }
-declare const _default$1: react.NamedExoticComponent<FormRowProps>;
+declare const _default$2: react.NamedExoticComponent<FormRowProps>;
+
+type SearchOnChange<T> = (value: string | number) => T[] | Promise<T[]>;
+type SearchInputBaseProps = Omit<InputProps, "onChange">;
+interface SearchInputProps<T> extends SearchInputBaseProps {
+    onChange: SearchOnChange<T>;
+    renderItem?: (item: T, index: number, active: boolean) => React.ReactNode;
+    onSelect?: (item: T) => void;
+}
+declare const _default$1: react.NamedExoticComponent<SearchInputProps<any> & react.RefAttributes<InputRefProps>>;
 
 interface ConfirmationRenderProps {
     success: (data?: any) => void;
@@ -262,5 +281,5 @@ declare class SharedMemory {
 }
 declare const sharedMemory: SharedMemory;
 
-export { _default$3 as ArrayContainer, MemoizedAutoInput as AutoInput, memoizedDateInput as DateInput, MemoizedDisabledInput as DisabledInput, _default$1 as FormRow, _default as InputContainer, MemoizedNumInput as NumInput, MemoizedObjectContainer as ObjectContainer, _default$2 as RunningText, MemoizedSelectInput as SelectInput, MemoizedStrInput as StrInput, MemoizedSubmitButton as SubmitButton, sharedMemory };
+export { _default$4 as ArrayContainer, MemoizedAutoInput as AutoInput, memoizedDateInput as DateInput, MemoizedDisabledInput as DisabledInput, _default$2 as FormRow, _default as InputContainer, MemoizedNumInput as NumInput, MemoizedObjectContainer as ObjectContainer, _default$3 as RunningText, _default$1 as SearchInput, MemoizedSelectInput as SelectInput, MemoizedStrInput as StrInput, MemoizedSubmitButton as SubmitButton, sharedMemory, stateStyle };
 export type { ConfirmationRenderProps, DropdownRefType, OnBlur, OnBlurArgs, OnEnterPress, OnInputChange, OnInputChangeArgs, OnSubmit, OnSubmitArgs, SubmitButtonRef, onEnterPressArgs };

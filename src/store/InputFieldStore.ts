@@ -7,7 +7,7 @@ import { FormNode } from "./FormNode"
 import type { FormObjectType } from "./FormObject"
 import type { InputFormType } from "./InputFormStore"
 
-export type DisplayNames = 'StrInput' | 'NumInput' | 'SelectInput' | 'DateInput' | 'DisabledInput' | 'ArrayInput' | 'ObjectInput' | 'SelectDependentInput'
+export type DisplayNames = 'StrInput' | 'NumInput' | 'SelectInput' | 'DateInput' | 'DisabledInput' | 'ArrayInput' | 'ObjectInput' | 'SelectDependentInput' | 'SearchInput'
 
 export const fieldCode: Record<DisplayNames, number> = {
     StrInput: 0,
@@ -17,7 +17,8 @@ export const fieldCode: Record<DisplayNames, number> = {
     DisabledInput: 4,
     ArrayInput: 5,
     ObjectInput: 6,
-    SelectDependentInput: 7
+    SelectDependentInput: 7,
+    SearchInput: 8
 }
 
 export class InputField extends FormNode {

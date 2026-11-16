@@ -3,7 +3,7 @@ import type { DropdownFieldType } from "./DropdownStore"
 
 class OptionGlobal {
     private _field: DropdownFieldType | DropdownDependencyFieldType | null = null
-    private _filteredOptions: { value: any, label: string }[] = []
+    private _filteredOptions: { value: any, label: string, raw?: any }[] = []
     private _highlightedIndex: number = 0
     private _search = ""
     public optionElements = new Map<number, HTMLDivElement>()
@@ -145,12 +145,18 @@ class OptionGlobal {
 
     select(index: number) {
         if (this._field) {
-            this._field.value = this._filteredOptions[index].value
+            this._field.value = this._filteredOptions[index]?.value
+            console.log('the selected value is', this._field)
+            if (this._field.el) {
+                this._field.el.focus()
+            }
             this._field.close()
         }
     }
 
     handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+
+        e.stopPropagation()
 
         const options = this._filteredOptions
 
@@ -170,6 +176,7 @@ class OptionGlobal {
                 break
 
             case "ArrowUp":
+                console.log('arr up is pressed')
                 e.preventDefault()
 
                 this.highlight(
@@ -190,6 +197,13 @@ class OptionGlobal {
 
             case "Escape":
                 e.preventDefault()
+
+                this._field?.close()
+
+                break
+
+            case "Tab":
+                // e.preventDefault()
 
                 this._field?.close()
 
