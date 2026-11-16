@@ -217,6 +217,9 @@ var OptionGlobal = class {
     this._search = value;
     this.recomputeOptions();
   }
+  reloadOptions() {
+    this.recomputeOptions();
+  }
   recomputeOptions() {
     if (!this._field) return;
     const search = this._search.trim().toLowerCase();
@@ -1081,6 +1084,8 @@ var DropdownField = class extends FormNode {
   }
   set options(options) {
     if (!isArray(options)) return;
+    this._options = [];
+    this.valueOptionMap.clear();
     let initOptions = [];
     if (this.includeDefaultLabel) initOptions.push({ value: "", label: this.defaultLabel });
     if (typeof options[0] === "string") {
@@ -1100,6 +1105,7 @@ var DropdownField = class extends FormNode {
     initOptions.forEach((opt) => {
       this.valueOptionMap.set(opt.value, opt);
     });
+    GlobalOptionStore.reloadOptions();
   }
   set el(el) {
     this._inputel = el;
@@ -2594,7 +2600,6 @@ var DropdownOptions = ({ field, searchable = false, parentRef, renderItem }) => 
       const clickedInsideOptions = containerRef.current?.contains(target);
       const clickedInsideParent = field.el?.contains(target);
       if (!clickedInsideOptions && !clickedInsideParent) {
-        console.log("closing dropdown with outside click");
         field.close();
       }
     };
@@ -2631,27 +2636,30 @@ var DropdownOptions = ({ field, searchable = false, parentRef, renderItem }) => 
             placeholder: "Search..."
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { children: options.map((option, index) => {
-          const optionValue = option.value;
-          const optionLabel = option.label;
-          const isSelected = optionValue === curValue;
-          return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-            "div",
-            {
-              role: "option",
-              "aria-selected": isSelected,
-              ref: (el) => {
-                if (!el) return;
-                GlobalOptionStore.registerElement(index, el, isSelected, lastIndex === index);
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", {
+          // (lastIndex >= 0 ? options : [{ value: 'No options found', label: 'No options found' }]).map((option, index) => {
+          children: options.map((option, index) => {
+            const optionValue = option.value;
+            const optionLabel = option.label;
+            const isSelected = optionValue === curValue;
+            return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+              "div",
+              {
+                role: "option",
+                "aria-selected": isSelected,
+                ref: (el) => {
+                  if (!el) return;
+                  GlobalOptionStore.registerElement(index, el, isSelected, lastIndex === index);
+                },
+                onMouseEnter: () => GlobalOptionStore.highlight(index),
+                className: `select-option`,
+                onClick: () => GlobalOptionStore.select(index),
+                children: renderItem ? renderItem(option.raw ?? optionValue) : optionLabel
               },
-              onMouseEnter: () => GlobalOptionStore.highlight(index),
-              className: `select-option`,
-              onClick: () => GlobalOptionStore.select(index),
-              children: renderItem ? renderItem(option.raw ?? optionValue, index, isSelected) : optionLabel
-            },
-            optionLabel
-          );
-        }) })
+              optionLabel
+            );
+          })
+        })
       ]
     }
   );
@@ -3163,18 +3171,24 @@ var SearchInput = (0, import_react23.forwardRef)(({ ...props }, ref) => {
   const disabledValue = useIsDisabled(field.current);
   const hiddenValue = useIsHidden(field.current);
   const handleChange = (value) => {
-    clearTimeout(timeOutObj.current);
-    timeOutObj.current = setTimeout(async () => {
-      if (!value) return;
-      const searchedData = await onChange(value);
-      const dropdownInstance = dropdownField.current;
-      if (!dropdownInstance) return;
-      dropdownInstance.options = searchedData;
-      dropdownInstance.open();
-    }, 800);
+    const dropdownInstance = dropdownField.current;
+    if (!dropdownInstance) return;
+    if (value === "") {
+      dropdownInstance.options = [];
+      dropdownInstance.close();
+    }
     const fieldValue = field.current;
     if (!fieldValue) return;
     fieldValue.value = value;
+    if (!onChange) return;
+    clearTimeout(timeOutObj.current);
+    timeOutObj.current = setTimeout(async () => {
+      if (!value) return;
+      console.log("the value of value is", value);
+      const searchedData = await onChange(value);
+      dropdownInstance.options = searchedData;
+      dropdownInstance.open();
+    }, 800);
   };
   if (hiddenValue) return null;
   return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(

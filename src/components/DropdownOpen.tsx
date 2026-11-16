@@ -8,7 +8,7 @@ interface DropdownOpenProps {
     field: DropdownFieldType | DropdownDependencyFieldType
     inputRef: React.RefObject<HTMLDivElement | null>
     searchable: boolean
-    renderItem?: (item: any, index: number, active: boolean) => React.ReactNode
+    renderItem?: (item: any) => React.ReactNode
 }
 
 const DropdownOpen: React.FC<DropdownOpenProps> = ({ field, inputRef, searchable, renderItem }) => {

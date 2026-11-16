@@ -20,7 +20,8 @@ export { default as SearchInput } from './components/SearchInput'
 export { default as SubmitButton, type ConfirmationRenderProps, type SubmitButtonRef } from './components/SubmitButton';
 export { default as InputContainer } from './components/InputContainer';
 export type { OnSubmit, OnSubmitArgs } from './typeDeclaration/inputProps'
-export type {DropdownRefType} from './components/SelectInput'
+// export type {DropdownRefType} from './components/SelectInput'
+export type {DropdownRefType, SearchOnChange} from './typeDeclaration/dropdownProps'
 export type { OnBlur, OnEnterPress, OnInputChange, OnBlurArgs, OnInputChangeArgs, onEnterPressArgs } from './typeDeclaration/baseProps'
 export { sharedMemory } from './store/sharedMemory'
 export { stateStyle } from './Utils/StyleInjection'

@@ -12,20 +12,18 @@ import DropdownOpen from "./DropdownOpen"
 import { DropdownField, DropdownFieldType } from "../store/DropdownStore"
 import { GlobalOptionStore } from "../store/GlobalOptionStore"
 import { FieldProps, OnInputChangeArgs } from "../typeDeclaration/baseProps"
-type SearchOnChange<T> = (
-    value: string | number
-) => T[] | Promise<T[]>
+import { SearchOnChange } from "../typeDeclaration/dropdownProps"
 
 type SearchInputBaseProps = Omit<InputProps, "onChange">
 
-interface SearchInputProps<T> extends SearchInputBaseProps {
-    onChange: SearchOnChange<T>
+interface SearchInputProps extends SearchInputBaseProps {
+    onChange: SearchOnChange
     refinedKey?: string
-    renderItem?: (item: T, index: number, active: boolean) => React.ReactNode
+    renderItem?: (item: any) => React.ReactNode
     onSelect?: (args: OnInputChangeArgs) => void
 }
 
-const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props }, ref) => {
+const SearchInput = forwardRef<InputRefProps, SearchInputProps>(({ ...props }, ref) => {
     const { placeholder, name, children, onChange, style, className = "", renderItem, onSelect, refinedKey, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props
     const { inputStore } = useContainerContext()
     const scope = useNameScope()
@@ -85,22 +83,28 @@ const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props
     const hiddenValue: boolean = useIsHidden(field.current!)
 
     const handleChange = (value: string | number) => {
-        // const changedValue = e.target.value
-        clearTimeout(timeOutObj.current)
-        timeOutObj.current = setTimeout(async () => {
-            // setSearch(value as string)
-            if (!value) return
-            const searchedData = await onChange(value)
-            // console.log('the searched data is', searchedData)
-            const dropdownInstance = dropdownField.current
-            if (!dropdownInstance) return
-            dropdownInstance.options = searchedData
-            dropdownInstance.open()
-            // console.log('the options are', dropdownInstance._options)
-        }, 800);
+        const dropdownInstance = dropdownField.current
+        if (!dropdownInstance) return
+
+        if (value === "") {
+            dropdownInstance.options = []
+            dropdownInstance.close()
+        }
+
         const fieldValue = field.current
         if (!fieldValue) return
         fieldValue.value = value
+
+        if (!onChange) return
+
+        clearTimeout(timeOutObj.current)
+        timeOutObj.current = setTimeout(async () => {
+            if (!value) return
+            console.log('the value of value is', value)
+            const searchedData = await onChange(value)
+            dropdownInstance.options = searchedData
+            dropdownInstance.open()
+        }, 800);
     }
 
     if (hiddenValue) return null

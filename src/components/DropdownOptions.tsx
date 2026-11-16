@@ -8,7 +8,7 @@ interface DropdownOptionsProps {
   field: DropdownFieldType | DropdownDependencyFieldType
   searchable: boolean
   parentRef: React.RefObject<HTMLDivElement | null>
-  renderItem?: (item: any, index: number, active: boolean) => React.ReactNode
+  renderItem?: (item: any) => React.ReactNode
 }
 
 const DropdownOptions: React.FC<DropdownOptionsProps> = ({ field, searchable = false, parentRef, renderItem }) => {
@@ -36,7 +36,7 @@ const DropdownOptions: React.FC<DropdownOptionsProps> = ({ field, searchable = f
       const clickedInsideParent = field.el?.contains(target)
 
       if (!clickedInsideOptions && !clickedInsideParent) {
-        console.log('closing dropdown with outside click')
+        // console.log('closing dropdown with outside click')
         field.close()
       }
     }
@@ -56,6 +56,8 @@ const DropdownOptions: React.FC<DropdownOptionsProps> = ({ field, searchable = f
   const stopFocusPropagation = useCallback((e: React.FocusEvent<HTMLDivElement>) => {   /// this propagates to dropdown modal and triggers focus there
     e.stopPropagation()
   }, [])
+
+  
 
 
   return (
@@ -86,10 +88,12 @@ const DropdownOptions: React.FC<DropdownOptionsProps> = ({ field, searchable = f
       )}
       <div>
         {
+          // (lastIndex >= 0 ? options : [{ value: 'No options found', label: 'No options found' }]).map((option, index) => {
           options.map((option, index) => {
             const optionValue = option.value
             const optionLabel = option.label
             const isSelected = optionValue === curValue
+            
             // const itemKey = typeof optionValue === 'object' ? index : `${optionValue}_${index}`
             return (
               <div
@@ -106,7 +110,7 @@ const DropdownOptions: React.FC<DropdownOptionsProps> = ({ field, searchable = f
               >
                 {/* {optionLabel} */}
                 {
-                  renderItem ? renderItem(option.raw ?? optionValue, index, isSelected) : optionLabel
+                  renderItem ? renderItem(option.raw ?? optionValue) : optionLabel
                 }
               </div>
             )

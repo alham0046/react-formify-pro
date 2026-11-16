@@ -3,18 +3,13 @@ import {forwardRef, memo, useImperativeHandle, useMemo, useRef, type CSSProperti
 import InputTemplate from './InputTemplate';
 import DropdownModal from './DropdownModal';
 import { useContainerContext } from '../context/ContainerContext';
-import type { SelectProps } from '../typeDeclaration/dropdownProps';
+import type { DropdownRefType, SelectProps } from '../typeDeclaration/dropdownProps';
 import { getStyleClass } from '../Utils/StyleInjection';
 // import { useDropdownField } from '../hooks/useField';
 import type { DropdownFieldType } from '../store/DropdownStore';
 import { useIsHidden } from '../hooks/ExternalSyncHooks';
 import { useNameScope } from '../context/NameScopeContext';
 import { createDropdown } from '../Utils/DropdownUtils';
-
-export interface DropdownRefType {
-    open: () => void
-    close: () => void
-}
 
 const SelectInput= forwardRef<DropdownRefType, SelectProps>((props, ref) => {
     const {

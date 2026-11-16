@@ -103,6 +103,10 @@ class OptionGlobal {
         this.recomputeOptions()
     }
 
+    reloadOptions() {
+        this.recomputeOptions()
+    }
+
     private recomputeOptions() {
         if (!this._field) return
 

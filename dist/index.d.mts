@@ -148,15 +148,16 @@ interface SelectProps extends BaseInputProps {
     searchable?: boolean;
     onToggleDropdown?: (isOpen: boolean) => void;
 }
+interface DropdownRefType {
+    open: () => void;
+    close: () => void;
+}
+type SearchOnChange = (value: string | number) => any[] | Promise<any[]>;
 interface SelectOption {
     label: string;
     value: string;
 }
 
-interface DropdownRefType {
-    open: () => void;
-    close: () => void;
-}
 declare const MemoizedSelectInput: react.NamedExoticComponent<SelectProps & react.RefAttributes<DropdownRefType>>;
 
 interface FullAutoInputProps {
@@ -209,15 +210,14 @@ interface FormRowProps {
 }
 declare const _default$2: react.NamedExoticComponent<FormRowProps>;
 
-type SearchOnChange<T> = (value: string | number) => T[] | Promise<T[]>;
 type SearchInputBaseProps = Omit<InputProps, "onChange">;
-interface SearchInputProps<T> extends SearchInputBaseProps {
-    onChange: SearchOnChange<T>;
+interface SearchInputProps extends SearchInputBaseProps {
+    onChange: SearchOnChange;
     refinedKey?: string;
-    renderItem?: (item: T, index: number, active: boolean) => React.ReactNode;
+    renderItem?: (item: any) => React.ReactNode;
     onSelect?: (args: OnInputChangeArgs) => void;
 }
-declare const _default$1: react.NamedExoticComponent<SearchInputProps<any> & react.RefAttributes<InputRefProps>>;
+declare const _default$1: react.NamedExoticComponent<SearchInputProps & react.RefAttributes<InputRefProps>>;
 
 interface ConfirmationRenderProps {
     success: (data?: any) => void;
@@ -283,4 +283,4 @@ declare class SharedMemory {
 declare const sharedMemory: SharedMemory;
 
 export { _default$4 as ArrayContainer, MemoizedAutoInput as AutoInput, memoizedDateInput as DateInput, MemoizedDisabledInput as DisabledInput, _default$2 as FormRow, _default as InputContainer, MemoizedNumInput as NumInput, MemoizedObjectContainer as ObjectContainer, _default$3 as RunningText, _default$1 as SearchInput, MemoizedSelectInput as SelectInput, MemoizedStrInput as StrInput, MemoizedSubmitButton as SubmitButton, sharedMemory, stateStyle };
-export type { ConfirmationRenderProps, DropdownRefType, OnBlur, OnBlurArgs, OnEnterPress, OnInputChange, OnInputChangeArgs, OnSubmit, OnSubmitArgs, SubmitButtonRef, onEnterPressArgs };
+export type { ConfirmationRenderProps, DropdownRefType, OnBlur, OnBlurArgs, OnEnterPress, OnInputChange, OnInputChangeArgs, OnSubmit, OnSubmitArgs, SearchOnChange, SubmitButtonRef, onEnterPressArgs };

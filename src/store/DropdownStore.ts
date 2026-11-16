@@ -116,6 +116,8 @@ export class DropdownField extends FormNode {
 
     set options(options: { value: any, label: string }[] | string[] | any[]) {
         if (!isArray(options)) return
+        this._options = []
+        this.valueOptionMap.clear()
         let initOptions: { value: any, label: string, raw?: any }[] = []
         if (this.includeDefaultLabel) initOptions.push({ value: "", label: this.defaultLabel })
         
@@ -127,6 +129,7 @@ export class DropdownField extends FormNode {
         else if (options[0] && "value" in options[0] && "label" in options[0]) {
             initOptions = options as { value: any, label: string }[]
         } else {
+            ////// extra code for SearchInput
             for (const item of options) {
                 const val = item.id ?? item.value ?? item
                 const lbl = item.label ?? item.title ?? item.name ?? String(val)
@@ -139,6 +142,8 @@ export class DropdownField extends FormNode {
         initOptions.forEach(opt => {
             this.valueOptionMap.set(opt.value, opt)
         })
+
+        GlobalOptionStore.reloadOptions()    ////// line added for SearchInput
     }
 
     set el(el : HTMLDivElement | null) {
@@ -179,10 +184,12 @@ export class DropdownField extends FormNode {
         if (this._value === v) return
         this._value = v
         this.label = this.valueOptionMap.get(v)?.label || this.defaultLabel
+        ////// extra code for SearchInput
         if (!this.root) {
             this.notify()
             return
         }
+        /////// extra code ends
         // Track dirty state only when form is in "edit" mode
         if (this.root.mode === "edit") {
             const isNowDirty = v !== this._initialValue

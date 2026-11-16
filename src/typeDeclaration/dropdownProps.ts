@@ -14,6 +14,15 @@ export interface SelectProps extends BaseInputProps {
     onToggleDropdown?: (isOpen: boolean) => void
 }
 
+export interface DropdownRefType {
+    open: () => void
+    close: () => void
+}
+
+export type SearchOnChange = (
+    value: string | number
+) => any[] | Promise<any[]>
+
 
 export interface SelectDependentProps extends BaseInputProps {
     includeDefaultLabel?: boolean
