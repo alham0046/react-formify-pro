@@ -168,7 +168,7 @@ const DropdownModal: FC<DropdownModalProps> = ({
     }, [])
 
     const handleTabKey = useCallback((e : React.KeyboardEvent<HTMLDivElement>) => {
-        console.log('the pressed key is', e.key)
+        // console.log('the pressed key is', e.key)
         if (e.key === "Enter") {
             openDropdown()
         //   closeDropdown()
@@ -192,7 +192,7 @@ const DropdownModal: FC<DropdownModalProps> = ({
         // if (e.target !== e.currentTarget) {
         //   return
         // }
-        console.log('tab to open')
+        // console.log('tab to open')
         onFocus?.(field.name)
         openDropdown()
     },[])

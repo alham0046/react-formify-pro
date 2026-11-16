@@ -152,7 +152,7 @@ export class DropdownField extends FormNode {
     open() {
         if (this._isOpen === true || this._disabled) return
         this._isOpen = true
-        console.log('opening activate')
+        // console.log('opening activate')
         GlobalOptionStore.activate(this)
         // this.recomputeOptions()
         this.notifyToggle()
@@ -161,7 +161,7 @@ export class DropdownField extends FormNode {
     close() {
         if (this._isOpen === false) return
         this._isOpen = false
-        console.log('closing deactivate')
+        // console.log('closing deactivate')
         GlobalOptionStore.deactivate(this)
         this.notifyToggle()
     }

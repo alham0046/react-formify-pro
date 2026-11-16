@@ -11,6 +11,7 @@ import { useIsDisabled, useIsHidden } from "../hooks/ExternalSyncHooks"
 import DropdownOpen from "./DropdownOpen"
 import { DropdownField, DropdownFieldType } from "../store/DropdownStore"
 import { GlobalOptionStore } from "../store/GlobalOptionStore"
+import { FieldProps, OnInputChangeArgs } from "../typeDeclaration/baseProps"
 type SearchOnChange<T> = (
     value: string | number
 ) => T[] | Promise<T[]>
@@ -19,12 +20,13 @@ type SearchInputBaseProps = Omit<InputProps, "onChange">
 
 interface SearchInputProps<T> extends SearchInputBaseProps {
     onChange: SearchOnChange<T>
+    refinedKey?: string
     renderItem?: (item: T, index: number, active: boolean) => React.ReactNode
-    onSelect?: (item: T) => void
+    onSelect?: (args: OnInputChangeArgs) => void
 }
 
 const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props }, ref) => {
-    const { placeholder, name, children, onChange, style, className = "", renderItem, onSelect, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props
+    const { placeholder, name, children, onChange, style, className = "", renderItem, onSelect, refinedKey, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props
     const { inputStore } = useContainerContext()
     const scope = useNameScope()
 
@@ -52,8 +54,19 @@ const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props
         const dropdownFieldInstance = new DropdownField('search-internal', "", [], null as any, null as any, "")
         dropdownFieldInstance.displayCode = 'SearchInput'
         dropdownFieldInstance.subscribe(() => {
-            fieldInstance.value = dropdownFieldInstance.value
-            onSelect?.(dropdownFieldInstance.value)
+            // fieldInstance.value = dropdownFieldInstance.value
+            const value = dropdownFieldInstance.value
+            if (typeof value === 'string') {
+                fieldInstance.value = value
+            } else if (refinedKey && refinedKey in value) {
+                fieldInstance.value = value[refinedKey]
+            }
+            onSelect?.({
+                value,
+                setFields: (field: FieldProps) => fieldInstance.setFields(field),
+                arrayAction: (path?: string) => fieldInstance.getArray(path),
+                reset: (key?: string | string[]) => dropdownFieldInstance.reset(key)
+            })
         })
         field.current = fieldInstance  //// Here field is mutating current only once. Not a big performance hit but still its faster and a point to learn
         dropdownField.current = dropdownFieldInstance
@@ -78,7 +91,7 @@ const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props
             // setSearch(value as string)
             if (!value) return
             const searchedData = await onChange(value)
-            console.log('the searched data is', searchedData)
+            // console.log('the searched data is', searchedData)
             const dropdownInstance = dropdownField.current
             if (!dropdownInstance) return
             dropdownInstance.options = searchedData
@@ -104,7 +117,7 @@ const SearchInput = forwardRef<InputRefProps, SearchInputProps<any>>(({ ...props
             style={{ '--anchor-name': `${anchorName}` } as CSSProperties}
         >
             {/* {console.log('rendering StrInput', modifiedName)} */}
-            
+
             <InputTemplate
                 name={field.current.name}
                 placeholder={placeholder}

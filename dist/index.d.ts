@@ -213,8 +213,9 @@ type SearchOnChange<T> = (value: string | number) => T[] | Promise<T[]>;
 type SearchInputBaseProps = Omit<InputProps, "onChange">;
 interface SearchInputProps<T> extends SearchInputBaseProps {
     onChange: SearchOnChange<T>;
+    refinedKey?: string;
     renderItem?: (item: T, index: number, active: boolean) => React.ReactNode;
-    onSelect?: (item: T) => void;
+    onSelect?: (args: OnInputChangeArgs) => void;
 }
 declare const _default$1: react.NamedExoticComponent<SearchInputProps<any> & react.RefAttributes<InputRefProps>>;
 

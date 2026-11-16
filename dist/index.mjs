@@ -111,7 +111,6 @@ var OptionGlobal = class {
   prevEl = null;
   activate(field) {
     this.deactivate(this._field);
-    console.log("activating");
     this._field = field;
     this._search = "";
     this._filteredOptions = field._options;
@@ -124,14 +123,12 @@ var OptionGlobal = class {
     this._filteredOptions = [];
     this._highlightedIndex = 0;
     this.optionElements.clear();
-    console.log("deactivating");
   }
   subscribe = (fieldName, cb) => {
     if (!this.optionsListeners.has(fieldName)) {
       this.optionsListeners.set(fieldName, /* @__PURE__ */ new Set());
     }
     this.optionsListeners.get(fieldName).add(cb);
-    console.log("the listeners are", this.optionsListeners);
     return () => {
       const listeners = this.optionsListeners.get(fieldName);
       if (!listeners) return;
@@ -174,7 +171,6 @@ var OptionGlobal = class {
     if (!this._field) return;
     const search = this._search.trim().toLowerCase();
     if (!search) {
-      console.log("going to no search");
       this._filteredOptions = this._field?._options;
     } else {
       this._filteredOptions = this._field._options.filter(
@@ -199,7 +195,6 @@ var OptionGlobal = class {
   select(index) {
     if (this._field) {
       this._field.value = this._filteredOptions[index]?.value;
-      console.log("the selected value is", this._field);
       if (this._field.el) {
         this._field.el.focus();
       }
@@ -218,7 +213,6 @@ var OptionGlobal = class {
         );
         break;
       case "ArrowUp":
-        console.log("arr up is pressed");
         e.preventDefault();
         this.highlight(
           this._highlightedIndex === 0 ? options.length - 1 : this._highlightedIndex - 1
@@ -1066,14 +1060,12 @@ var DropdownField = class extends FormNode {
   open() {
     if (this._isOpen === true || this._disabled) return;
     this._isOpen = true;
-    console.log("opening activate");
     GlobalOptionStore.activate(this);
     this.notifyToggle();
   }
   close() {
     if (this._isOpen === false) return;
     this._isOpen = false;
-    console.log("closing deactivate");
     GlobalOptionStore.deactivate(this);
     this.notifyToggle();
   }
@@ -2642,7 +2634,6 @@ var DropdownModal = ({
     field.close();
   }, []);
   const handleTabKey = useCallback8((e) => {
-    console.log("the pressed key is", e.key);
     if (e.key === "Enter") {
       openDropdown();
       return;
@@ -2652,7 +2643,6 @@ var DropdownModal = ({
     if (!e.relatedTarget && document.activeElement === e.target) {
       return;
     }
-    console.log("tab to open");
     onFocus?.(field.name);
     openDropdown();
   }, []);
@@ -3077,7 +3067,7 @@ var FormRow_default = memo17(FormRow);
 import { forwardRef as forwardRef6, memo as memo18, useMemo as useMemo11, useRef as useRef10 } from "react";
 import { jsx as jsx19, jsxs as jsxs12 } from "react/jsx-runtime";
 var SearchInput = forwardRef6(({ ...props }, ref) => {
-  const { placeholder, name, children, onChange, style, className = "", renderItem, onSelect, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props;
+  const { placeholder, name, children, onChange, style, className = "", renderItem, onSelect, refinedKey, initialValue = "", disabled = false, hideElement = false, privacy = false, ...rest } = props;
   const { inputStore } = useContainerContext();
   const scope = useNameScope();
   const searchRef = useRef10(null);
@@ -3101,8 +3091,18 @@ var SearchInput = forwardRef6(({ ...props }, ref) => {
     const dropdownFieldInstance = new DropdownField("search-internal", "", [], null, null, "");
     dropdownFieldInstance.displayCode = "SearchInput";
     dropdownFieldInstance.subscribe(() => {
-      fieldInstance.value = dropdownFieldInstance.value;
-      onSelect?.(dropdownFieldInstance.value);
+      const value = dropdownFieldInstance.value;
+      if (typeof value === "string") {
+        fieldInstance.value = value;
+      } else if (refinedKey && refinedKey in value) {
+        fieldInstance.value = value[refinedKey];
+      }
+      onSelect?.({
+        value,
+        setFields: (field2) => fieldInstance.setFields(field2),
+        arrayAction: (path) => fieldInstance.getArray(path),
+        reset: (key) => dropdownFieldInstance.reset(key)
+      });
     });
     field.current = fieldInstance;
     dropdownField.current = dropdownFieldInstance;
@@ -3117,7 +3117,6 @@ var SearchInput = forwardRef6(({ ...props }, ref) => {
     timeOutObj.current = setTimeout(async () => {
       if (!value) return;
       const searchedData = await onChange(value);
-      console.log("the searched data is", searchedData);
       const dropdownInstance = dropdownField.current;
       if (!dropdownInstance) return;
       dropdownInstance.options = searchedData;

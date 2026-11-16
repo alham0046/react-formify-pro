@@ -12,7 +12,7 @@ class OptionGlobal {
 
     activate(field: DropdownFieldType | DropdownDependencyFieldType) {
         this.deactivate(this._field!)
-        console.log('activating')
+        // console.log('activating')
 
         this._field = field
 
@@ -38,7 +38,7 @@ class OptionGlobal {
         this._highlightedIndex = 0
 
         this.optionElements.clear()
-        console.log('deactivating')
+        // console.log('deactivating')
     }
 
 
@@ -48,7 +48,7 @@ class OptionGlobal {
         }
         this.optionsListeners.get(fieldName)!.add(cb)
 
-        console.log('the listeners are', this.optionsListeners)
+        // console.log('the listeners are', this.optionsListeners)
         return () => {
             const listeners = this.optionsListeners.get(fieldName)
 
@@ -111,7 +111,7 @@ class OptionGlobal {
         // let highlighted: number = 0
 
         if (!search) {
-            console.log('going to no search')
+            // console.log('going to no search')
             this._filteredOptions = this._field?._options
             // highlighted = this._selectedIndex
         } else {
@@ -146,7 +146,7 @@ class OptionGlobal {
     select(index: number) {
         if (this._field) {
             this._field.value = this._filteredOptions[index]?.value
-            console.log('the selected value is', this._field)
+            // console.log('the selected value is', this._field)
             if (this._field.el) {
                 this._field.el.focus()
             }
@@ -176,7 +176,7 @@ class OptionGlobal {
                 break
 
             case "ArrowUp":
-                console.log('arr up is pressed')
+                // console.log('arr up is pressed')
                 e.preventDefault()
 
                 this.highlight(
